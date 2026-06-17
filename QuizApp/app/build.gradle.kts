@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
+    id("maven-publish")
 }
 
 android {
@@ -67,4 +68,35 @@ dependencies {
     implementation(libs.apache.poi)
 
     debugImplementation(libs.androidx.ui.tooling)
+}
+
+// ═══ GitHub Packages 发布配置 ═══
+afterEvaluate {
+    publishing {
+        publications {
+            create<MavenPublication>("release") {
+                groupId = "com.quizapp"
+                artifactId = "quizapp"
+                version = android.defaultConfig.versionName
+
+                // 发布 APK
+                artifact(tasks.named("assembleDebug").map {
+                    file("build/outputs/apk/debug/app-debug.apk")
+                }) {
+                    classifier = "debug"
+                    extension = "apk"
+                }
+            }
+        }
+        repositories {
+            maven {
+                name = "GitHubPackages"
+                url = uri("https://maven.pkg.github.com/MBXHJ/Quiz")
+                credentials {
+                    username = project.findProperty("gpr.user") as? String ?: System.getenv("GPR_USER")
+                    password = project.findProperty("gpr.key") as? String ?: System.getenv("GPR_KEY")
+                }
+            }
+        }
+    }
 }
