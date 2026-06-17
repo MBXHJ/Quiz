@@ -1,3 +1,0 @@
--keep,allowobfuscation,allowshrinking class com.quizapp.ui.screens.exam.ExamViewModel
--keep,allowobfuscation,allowshrinking class com.quizapp.ui.screens.exam.ExamViewModel
--keep,allowobfuscation,allowshrinking class com.quizapp.ui.screens.home.BankListViewModel

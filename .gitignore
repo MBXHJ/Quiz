@@ -1,0 +1,36 @@
+# Android / Gradle
+.gradle/
+build/
+app/build/
+local.properties
+*.iml
+.idea/
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+*.log
+
+# Kotlin
+*.kotlin_module
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Backup files
+*.bak
+
+# Flutter (if present)
+QuizAppFlutter/
+flutter/
+
+# Python scripts
+*.py
+questions.json
+questions_1200.txt
+人工智能训练师理论题1200题_convert.txt
+
+# APK outputs
+刷题助手*.apk
