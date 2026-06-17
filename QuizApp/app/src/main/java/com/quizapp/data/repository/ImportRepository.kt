@@ -8,6 +8,7 @@ import com.quizapp.data.db.entity.QuestionBankEntity
 import com.quizapp.data.db.entity.QuestionEntity
 import com.quizapp.data.parser.DocxParser
 import com.quizapp.data.parser.ExcelParser
+import com.quizapp.data.parser.JsonParser
 import com.quizapp.data.parser.TxtParser
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -42,6 +43,12 @@ class ImportRepository @Inject constructor(
             }
             fileName.endsWith(".xlsx", ignoreCase = true) || fileName.endsWith(".xls", ignoreCase = true) -> {
                 ExcelParser(context).parseFromUri(uri)
+            }
+            fileName.endsWith(".json", ignoreCase = true) -> {
+                val inputStream = context.contentResolver.openInputStream(uri)
+                    ?: throw IllegalArgumentException("无法读取文件")
+                val text = inputStream.bufferedReader().use { it.readText() }
+                JsonParser().parse(text)
             }
             fileName.endsWith(".md", ignoreCase = true) || fileName.endsWith(".txt", ignoreCase = true) -> {
                 val inputStream = context.contentResolver.openInputStream(uri)
