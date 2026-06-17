@@ -1,0 +1,28 @@
+name: quiz_app
+description: 刷题助手 - 多题库支持，导入txt/md/docx/xlsx格式
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  sqflite: ^2.3.0
+  path: ^1.8.3
+  path_provider: ^2.1.1
+  file_picker: ^6.1.1
+  intl: ^0.18.1
+  share_plus: ^7.2.1
+  archive: ^3.4.9
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.1
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/

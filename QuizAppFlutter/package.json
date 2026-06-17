@@ -1,0 +1,18 @@
+{
+  "name": "quiz_app",
+  "version": "1.0.0",
+  "description": "刷题助手 Flutter 项目",
+  "main": "lib/main.dart",
+  "scripts": {
+    "build-android": "flutter build apk",
+    "build-ios": "flutter build ios",
+    "run": "flutter run"
+  },
+  "dependencies": {
+    "flutter": ">=3.0.0",
+    "sqflite": "^2.3.0",
+    "path_provider": "^2.1.1",
+    "file_picker": "^6.1.1",
+    "provider": "^6.0.0"
+  }
+}

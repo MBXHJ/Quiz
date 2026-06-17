@@ -1,0 +1,12 @@
+-keep,allowobfuscation,allowshrinking class com.quizapp.ui.screens.exam.ExamViewModel
+-keep,allowobfuscation,allowshrinking class com.quizapp.ui.screens.exam.ExamViewModel
+-keep,allowobfuscation,allowshrinking class com.quizapp.ui.screens.home.BankListViewModel
+-keep,allowobfuscation,allowshrinking class com.quizapp.ui.screens.home.BankListViewModel
+-keep,allowobfuscation,allowshrinking class com.quizapp.ui.screens.importt.ImportViewModel
+-keep,allowobfuscation,allowshrinking class com.quizapp.ui.screens.importt.ImportViewModel
+-keep,allowobfuscation,allowshrinking class com.quizapp.ui.screens.practice.PracticeViewModel
+-keep,allowobfuscation,allowshrinking class com.quizapp.ui.screens.practice.PracticeViewModel
+-keep,allowobfuscation,allowshrinking class com.quizapp.ui.screens.profile.ProfileViewModel
+-keep,allowobfuscation,allowshrinking class com.quizapp.ui.screens.profile.ProfileViewModel
+-keep,allowobfuscation,allowshrinking class com.quizapp.ui.screens.question.QuestionViewModel
+-keep,allowobfuscation,allowshrinking class com.quizapp.ui.screens.question.QuestionViewModel
