@@ -13,6 +13,7 @@ import com.quizapp.ui.screens.importt.ImportScreen
 import com.quizapp.ui.screens.practice.PracticeScreen
 import com.quizapp.ui.screens.profile.ProfileScreen
 import com.quizapp.ui.screens.question.QuestionScreen
+import com.quizapp.ui.screens.settings.SettingsScreen
 
 @Composable
 fun NavGraph(navController: NavHostController) {
@@ -134,12 +135,17 @@ fun NavGraph(navController: NavHostController) {
         composable(Screen.Profile.route) {
             ProfileScreen(
                 onBack = { navController.popBackStack() },
+                onSettingsClick = { navController.navigate(Screen.Settings.route) },
                 onRestartPractice = { bankId, mode, recordId ->
                     navController.navigate(Screen.Question.createRoute(bankId, mode, recordId = recordId)) {
                         popUpTo(Screen.BankList.route)
                     }
                 }
             )
+        }
+
+        composable(Screen.Settings.route) {
+            SettingsScreen(onBack = { navController.popBackStack() })
         }
     }
 }

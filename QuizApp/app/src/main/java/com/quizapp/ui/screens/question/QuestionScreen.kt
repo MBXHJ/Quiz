@@ -81,6 +81,16 @@ fun QuestionScreen(
                             )
                         }
                     }
+                    // Note button
+                    if (s.questions.isNotEmpty()) {
+                        IconButton(onClick = { viewModel.toggleNoteDialog() }) {
+                            Icon(
+                                Icons.Default.EditNote,
+                                "笔记",
+                                tint = if (s.noteText.isNotBlank()) Color(0xFF10B981) else LocalContentColor.current
+                            )
+                        }
+                    }
                     // Question navigator button
                     if (s.questions.isNotEmpty()) {
                         IconButton(onClick = { viewModel.toggleJumpDialog() }) {
@@ -303,6 +313,30 @@ fun QuestionScreen(
                 }
             },
             dismissButton = { TextButton(onClick = { viewModel.toggleJumpDialog() }) { Text("关闭") } }
+        )
+    }
+
+    // ═══ Note dialog ═══
+    if (s.showNoteDialog) {
+        AlertDialog(
+            onDismissRequest = { viewModel.toggleNoteDialog() },
+            shape = RoundedCornerShape(20.dp),
+            title = { Text("笔记", fontWeight = FontWeight.Bold) },
+            text = {
+                OutlinedTextField(
+                    value = s.noteText,
+                    onValueChange = { viewModel.updateNoteText(it) },
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 120.dp),
+                    placeholder = { Text("写下你的笔记...") },
+                    shape = RoundedCornerShape(12.dp)
+                )
+            },
+            confirmButton = {
+                Button(onClick = { viewModel.saveCurrentNote(); viewModel.toggleNoteDialog() }) {
+                    Text("保存")
+                }
+            },
+            dismissButton = { TextButton(onClick = { viewModel.toggleNoteDialog() }) { Text("取消") } }
         )
     }
 }

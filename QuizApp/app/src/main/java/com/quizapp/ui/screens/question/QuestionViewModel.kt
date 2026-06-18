@@ -37,7 +37,9 @@ data class QuestionUiState(
     val isFavorite: Boolean = false,
     val isMarked: Boolean = false,
     val elapsedSeconds: Int = 0,
-    val startTime: Long = 0L
+    val startTime: Long = 0L,
+    val showNoteDialog: Boolean = false,
+    val noteText: String = ""
 )
 
 @HiltViewModel
@@ -282,6 +284,29 @@ class QuestionViewModel @Inject constructor(
                 quizRepository.addMark(question.id)
             }
             _uiState.value = _uiState.value.copy(isMarked = !isMkd)
+        }
+    }
+
+    fun toggleNoteDialog() {
+        viewModelScope.launch {
+            val q = _uiState.value.questions.getOrNull(_uiState.value.currentIndex) ?: return@launch
+            val note = quizRepository.getNote(q.id)
+            _uiState.value = _uiState.value.copy(showNoteDialog = !_uiState.value.showNoteDialog, noteText = note?.note ?: "")
+        }
+    }
+
+    fun updateNoteText(text: String) {
+        _uiState.value = _uiState.value.copy(noteText = text)
+    }
+
+    fun saveCurrentNote() {
+        viewModelScope.launch {
+            val q = _uiState.value.questions.getOrNull(_uiState.value.currentIndex) ?: return@launch
+            if (_uiState.value.noteText.isBlank()) quizRepository.deleteNote(q.id)
+            else {
+                quizRepository.saveNote(q.id, _uiState.value.noteText)
+                _uiState.value = _uiState.value.copy(noteText = _uiState.value.noteText)
+            }
         }
     }
 

@@ -23,6 +23,7 @@ import java.util.*
 @Composable
 fun ProfileScreen(
     onBack: () -> Unit,
+    onSettingsClick: () -> Unit = {},
     onRestartPractice: (bankId: Long, mode: String, recordId: Long) -> Unit = { _, _, _ -> },
     viewModel: ProfileViewModel = hiltViewModel()
 ) {
@@ -239,6 +240,33 @@ fun ProfileScreen(
                                             confirmButton = { Button(onClick = { viewModel.deleteExamRecord(rec.id); showDelExam = false }, colors = ButtonDefaults.buttonColors(containerColor = WrongRed)) { Text("删除") } },
                                             dismissButton = { TextButton(onClick = { showDelExam = false }) { Text("取消") } }
                                         )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // ═══ Settings & Export ═══
+                item {
+                    Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)) {
+                        Column(Modifier.padding(16.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceEvenly
+                            ) {
+                                Surface(onClick = onSettingsClick, shape = RoundedCornerShape(12.dp), color = SurfaceVariant.copy(alpha = 0.5f)) {
+                                    Row(Modifier.padding(horizontal = 24.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(Icons.Default.Settings, null, Modifier.size(20.dp), tint = TextSecondary)
+                                        Spacer(Modifier.width(6.dp))
+                                        Text("设置", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+                                    }
+                                }
+                                Surface(onClick = { viewModel.exportWrongQuestions() }, shape = RoundedCornerShape(12.dp), color = SurfaceVariant.copy(alpha = 0.5f)) {
+                                    Row(Modifier.padding(horizontal = 24.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(Icons.Default.Share, null, Modifier.size(20.dp), tint = TextSecondary)
+                                        Spacer(Modifier.width(6.dp))
+                                        Text("导出错题", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
                                     }
                                 }
                             }
