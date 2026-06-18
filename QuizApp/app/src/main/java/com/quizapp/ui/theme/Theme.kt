@@ -5,10 +5,13 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 
@@ -72,17 +75,28 @@ private val DarkColors = darkColorScheme(
 
 @Composable
 fun QuizAppTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    darkMode: Int = 0, // 0=auto, 1=light, 2=dark
+    fontScale: Float = 1.0f,
     content: @Composable () -> Unit
 ) {
-    val scheme = if (darkTheme) DarkColors else LightColors
+    val isDark = when (darkMode) {
+        1 -> false
+        2 -> true
+        else -> isSystemInDarkTheme()
+    }
+    val scheme = if (isDark) DarkColors else LightColors
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
             val w = (view.context as Activity).window
             w.statusBarColor = scheme.surface.toArgb()
-            WindowCompat.getInsetsController(w, view).isAppearanceLightStatusBars = !darkTheme
+            WindowCompat.getInsetsController(w, view).isAppearanceLightStatusBars = !isDark
         }
     }
-    MaterialTheme(colorScheme = scheme, typography = Typography, shapes = AppShapes, content = content)
+
+    val density = LocalDensity.current
+    val modifiedDensity = Density(density.density * fontScale, density.fontScale)
+    CompositionLocalProvider(LocalDensity provides modifiedDensity) {
+        MaterialTheme(colorScheme = scheme, typography = Typography, shapes = AppShapes, content = content)
+    }
 }
