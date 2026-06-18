@@ -14,10 +14,11 @@
 | **错题重做** | 自动记录错题，针对性巩固提分 |
 | **模拟考试** | 按比例（单选70%+多选20%+判断10%）随机抽题，模拟真实考场 |
 | **练习记录** | 每次练习自动保存，支持续练、删除记录 |
+| **错题历史** | 每次练习保存答错的题目，支持查看和重新练习 |
 | **考试记录** | 每次模拟考试保存分数、正确率、时间 |
 | **数据统计** | 个人页展示学习进度、已答题数、正确率 |
 | **题目跳转** | 答题卡网格视图，快速跳转到任意题目 |
-| **题库导入** | 支持导入 txt / docx / xlsx 格式题库文件 |
+| **题库导入** | 支持导入 txt / docx / xlsx / json / md 格式题库文件 |
 
 ## 内置题库 📖
 
@@ -37,7 +38,7 @@
 | 数据库 | Room（7 张表） |
 | 依赖注入 | Hilt |
 | 导航 | Navigation Compose |
-| 解析 | Apache POI（xlsx 解析） |
+| 解析 | Apache POI（xlsx 解析）、kotlinx-serialization（json 解析） |
 | 最低 SDK | Android 8.0 (API 26) |
 | 目标 SDK | Android 15 (API 35) |
 
@@ -53,7 +54,7 @@ QuizApp/
 │       │   │   ├── dao/           # 数据访问对象 (7个)
 │       │   │   ├── AppDatabase.kt # 数据库单例
 │       │   │   └── Converters.kt  # 类型转换器
-│       │   ├── parser/            # 题库解析器 (txt/docx/xlsx)
+│       │   ├── parser/            # 题库解析器 (txt/docx/xlsx/json)
 │       │   └── repository/        # 数据仓库
 │       ├── di/                    # Hilt 依赖注入模块
 │       ├── ui/
