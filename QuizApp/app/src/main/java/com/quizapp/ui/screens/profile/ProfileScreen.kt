@@ -47,10 +47,18 @@ fun ProfileScreen(
                             Text("学习统计", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = Color.White)
                             Spacer(Modifier.height(16.dp))
                             Row(Modifier.fillMaxWidth()) {
-                                StatBadge(Icons.Default.MenuBook, "${s.totalBanks}", "题库", modifier = Modifier.weight(1f))
-                                StatBadge(Icons.Default.CheckCircle, "${s.totalQuestions}", "总题数", modifier = Modifier.weight(1f))
-                                StatBadge(Icons.Default.Done, "${s.totalAnswered}", "已完成", Color(0xFFA7F3D0), Modifier.weight(1f))
-                                StatBadge(Icons.Default.ErrorOutline, "${s.totalWrong}", "错题", Color(0xFFFFCDD2), Modifier.weight(1f))
+                                Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                                    StatBadge(Icons.Default.MenuBook, "${s.totalBanks}", "题库")
+                                }
+                                Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                                    StatBadge(Icons.Default.CheckCircle, "${s.totalQuestions}", "总题数")
+                                }
+                                Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                                    StatBadge(Icons.Default.Done, "${s.totalAnswered}", "已完成", Color(0xFFA7F3D0))
+                                }
+                                Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                                    StatBadge(Icons.Default.ErrorOutline, "${s.totalWrong}", "错题", Color(0xFFFFCDD2))
+                                }
                             }
                         }
                     }
