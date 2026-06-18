@@ -26,6 +26,15 @@ import com.quizapp.data.db.entity.QuestionEntity
 import com.quizapp.ui.theme.*
 import androidx.compose.foundation.isSystemInDarkTheme
 
+/**
+ * Formats elapsed seconds into MM:SS display string.
+ */
+private fun formatElapsed(seconds: Int): String {
+    val m = seconds / 60
+    val s = seconds % 60
+    return "${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}"
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun QuestionScreen(
@@ -52,6 +61,26 @@ fun QuestionScreen(
                     viewModel.finishPractice(onFinished = onBack)
                 }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "返回") } },
                 actions = {
+                    // Favorite toggle
+                    if (s.questions.isNotEmpty()) {
+                        IconButton(onClick = { viewModel.toggleFavorite() }) {
+                            Icon(
+                                if (s.isFavorite) Icons.Default.Star else Icons.Default.StarBorder,
+                                "收藏",
+                                tint = if (s.isFavorite) Color(0xFFFFC107) else LocalContentColor.current
+                            )
+                        }
+                    }
+                    // Mark toggle
+                    if (s.questions.isNotEmpty()) {
+                        IconButton(onClick = { viewModel.toggleMark() }) {
+                            Icon(
+                                if (s.isMarked) Icons.Default.Flag else Icons.Default.OutlinedFlag,
+                                "标记",
+                                tint = if (s.isMarked) Color(0xFFFF9800) else LocalContentColor.current
+                            )
+                        }
+                    }
                     // Question navigator button
                     if (s.questions.isNotEmpty()) {
                         IconButton(onClick = { viewModel.toggleJumpDialog() }) {
@@ -75,13 +104,35 @@ fun QuestionScreen(
                         color = Primary, trackColor = BorderLight
                     )
 
-                    // Stats bar
+                    // Stats bar + timer
                     Surface(color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)) {
                         Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp), Arrangement.SpaceBetween) {
                             Text("已答 ${s.answeredCount}/${s.questions.size}", style = MaterialTheme.typography.labelSmall, color = TextSecondary)
                             if (s.answeredCount > 0) {
                                 Text("正确 ${s.correctCount}/${s.answeredCount}", style = MaterialTheme.typography.labelSmall, color = CorrectGreen)
                             }
+                        }
+                    }
+
+                    // Timer display
+                    Surface(color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.15f)) {
+                        Row(
+                            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Default.Timer,
+                                null,
+                                Modifier.size(14.dp),
+                                tint = TextSecondary
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text(
+                                formatElapsed(s.elapsedSeconds),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = TextSecondary
+                            )
                         }
                     }
 

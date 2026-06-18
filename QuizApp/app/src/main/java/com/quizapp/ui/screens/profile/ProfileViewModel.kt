@@ -22,7 +22,12 @@ data class ProfileUiState(
     val examRecords: List<ExamRecordEntity> = emptyList(),
     val practiceRecords: List<PracticeRecordEntity> = emptyList(),
     val bankNames: Map<Long, String> = emptyMap(),
-    val isLoading: Boolean = true
+    val isLoading: Boolean = true,
+    // Learning report
+    val totalPracticeTime: Long = 0L,    // in milliseconds
+    val totalPracticeAnswered: Int = 0,
+    val avgPracticeAccuracy: Int = 0,    // percentage
+    val bestPracticeAccuracy: Int = 0    // percentage
 )
 
 @HiltViewModel
@@ -62,6 +67,23 @@ class ProfileViewModel @Inject constructor(
             // Get recent practice records
             val allPracticeRecords = quizRepository.getRecentPracticeRecords(20).first()
 
+            // ── Learning report ──
+            val allPracticeRecordsFull = quizRepository.getAllPracticeRecordsOnce()
+            var totalPracticeTime = 0L
+            var totalPracticeAnswered = 0
+            var totalPracticeCorrect = 0
+            var bestAccuracy = 0
+            for (rec in allPracticeRecordsFull) {
+                if (rec.endTime > rec.startTime) {
+                    totalPracticeTime += (rec.endTime - rec.startTime)
+                }
+                totalPracticeAnswered += rec.answeredCount
+                totalPracticeCorrect += rec.correctCount
+                val acc = if (rec.answeredCount > 0) (rec.correctCount * 100) / rec.answeredCount else 0
+                if (acc > bestAccuracy) bestAccuracy = acc
+            }
+            val avgAccuracy = if (totalPracticeAnswered > 0) (totalPracticeCorrect * 100) / totalPracticeAnswered else 0
+
             _uiState.value = ProfileUiState(
                 totalBanks = banks.size,
                 totalQuestions = totalQuestions,
@@ -71,7 +93,11 @@ class ProfileViewModel @Inject constructor(
                 examRecords = sortedExamRecords,
                 practiceRecords = allPracticeRecords,
                 bankNames = bankNamesMap,
-                isLoading = false
+                isLoading = false,
+                totalPracticeTime = totalPracticeTime,
+                totalPracticeAnswered = totalPracticeAnswered,
+                avgPracticeAccuracy = avgAccuracy,
+                bestPracticeAccuracy = bestAccuracy
             )
         }
     }

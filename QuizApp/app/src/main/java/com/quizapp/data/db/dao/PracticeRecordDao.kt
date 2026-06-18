@@ -31,4 +31,7 @@ interface PracticeRecordDao {
 
     @Query("DELETE FROM practice_records WHERE bankId = :bankId")
     suspend fun deleteRecordsByBank(bankId: Long)
+
+    @Query("SELECT * FROM practice_records")
+    suspend fun getAllRecordsOnce(): List<PracticeRecordEntity>
 }

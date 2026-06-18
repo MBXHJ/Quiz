@@ -4,6 +4,8 @@ import android.content.Context
 import com.quizapp.data.db.AppDatabase
 import com.quizapp.data.db.dao.AnsweredQuestionDao
 import com.quizapp.data.db.dao.ExamRecordDao
+import com.quizapp.data.db.dao.FavoriteQuestionDao
+import com.quizapp.data.db.dao.MarkedQuestionDao
 import com.quizapp.data.db.dao.PracticeProgressDao
 import com.quizapp.data.db.dao.PracticeRecordDao
 import com.quizapp.data.db.dao.QuestionBankDao
@@ -46,4 +48,10 @@ object DatabaseModule {
 
     @Provides
     fun providePracticeRecordDao(db: AppDatabase): PracticeRecordDao = db.practiceRecordDao()
+
+    @Provides
+    fun provideFavoriteQuestionDao(db: AppDatabase): FavoriteQuestionDao = db.favoriteQuestionDao()
+
+    @Provides
+    fun provideMarkedQuestionDao(db: AppDatabase): MarkedQuestionDao = db.markedQuestionDao()
 }

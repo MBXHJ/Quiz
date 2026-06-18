@@ -2,6 +2,8 @@ package com.quizapp.data.repository
 
 import com.quizapp.data.db.dao.AnsweredQuestionDao
 import com.quizapp.data.db.dao.ExamRecordDao
+import com.quizapp.data.db.dao.FavoriteQuestionDao
+import com.quizapp.data.db.dao.MarkedQuestionDao
 import com.quizapp.data.db.dao.PracticeProgressDao
 import com.quizapp.data.db.dao.PracticeRecordDao
 import com.quizapp.data.db.dao.QuestionBankDao
@@ -10,6 +12,8 @@ import com.quizapp.data.db.dao.WrongRecordDao
 import com.quizapp.data.db.dao.WrongWithQuestion
 import com.quizapp.data.db.entity.AnsweredQuestionEntity
 import com.quizapp.data.db.entity.ExamRecordEntity
+import com.quizapp.data.db.entity.FavoriteQuestionEntity
+import com.quizapp.data.db.entity.MarkedQuestionEntity
 import com.quizapp.data.db.entity.PracticeProgressEntity
 import com.quizapp.data.db.entity.PracticeRecordEntity
 import com.quizapp.data.db.entity.QuestionBankEntity
@@ -27,7 +31,9 @@ class QuizRepository @Inject constructor(
     private val examRecordDao: ExamRecordDao,
     private val answeredQuestionDao: AnsweredQuestionDao,
     private val practiceProgressDao: PracticeProgressDao,
-    private val practiceRecordDao: PracticeRecordDao
+    private val practiceRecordDao: PracticeRecordDao,
+    private val favoriteQuestionDao: FavoriteQuestionDao,
+    private val markedQuestionDao: MarkedQuestionDao
 ) {
     // Question Banks
     fun getAllBanks(): Flow<List<QuestionBankEntity>> = bankDao.getAllBanks()
@@ -109,6 +115,23 @@ class QuizRepository @Inject constructor(
 
     suspend fun insertPracticeRecord(record: PracticeRecordEntity): Long =
         practiceRecordDao.insertRecord(record)
+
+    suspend fun getAllPracticeRecordsOnce(): List<PracticeRecordEntity> =
+        practiceRecordDao.getAllRecordsOnce()
+
+    // Favorites
+    suspend fun getAllFavoriteIds(): List<Long> = favoriteQuestionDao.getAllFavoriteIds()
+    suspend fun isFavorite(questionId: Long): Boolean = favoriteQuestionDao.isFavorite(questionId) != null
+    suspend fun addFavorite(questionId: Long) = favoriteQuestionDao.addFavorite(FavoriteQuestionEntity(questionId = questionId))
+    suspend fun removeFavorite(questionId: Long) = favoriteQuestionDao.removeFavorite(questionId)
+    suspend fun getFavoriteCount(): Int = favoriteQuestionDao.getFavoriteCount()
+
+    // Marked
+    suspend fun getAllMarkedIds(): List<Long> = markedQuestionDao.getAllMarkedIds()
+    suspend fun isMarked(questionId: Long): Boolean = markedQuestionDao.isMarked(questionId) != null
+    suspend fun addMark(questionId: Long) = markedQuestionDao.addMark(MarkedQuestionEntity(questionId = questionId))
+    suspend fun removeMark(questionId: Long) = markedQuestionDao.removeMark(questionId)
+    suspend fun getMarkedCount(): Int = markedQuestionDao.getMarkedCount()
 
     suspend fun updatePracticeRecord(record: PracticeRecordEntity) =
         practiceRecordDao.updateRecord(record)

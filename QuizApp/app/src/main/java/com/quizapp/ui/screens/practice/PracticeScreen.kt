@@ -17,6 +17,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.ImeAction
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.quizapp.ui.theme.*
 import com.quizapp.data.db.entity.PracticeProgressEntity
@@ -83,6 +86,37 @@ fun PracticeScreen(
             Column(
                 Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)
             ) {
+                // ═══ Search field ═══
+                var searchQuery by remember { mutableStateOf("") }
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+                    placeholder = { Text("搜索题目内容...") },
+                    leadingIcon = { Icon(Icons.Default.Search, "搜索") },
+                    trailingIcon = {
+                        if (searchQuery.isNotBlank()) {
+                            IconButton(onClick = { searchQuery = "" }) {
+                                Icon(Icons.Default.Clear, "清除")
+                            }
+                        }
+                    },
+                    singleLine = true,
+                    shape = RoundedCornerShape(14.dp),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                    keyboardActions = KeyboardActions(
+                        onSearch = {
+                            if (searchQuery.isNotBlank()) {
+                                onStartPractice("search_$searchQuery")
+                            }
+                        }
+                    ),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Primary,
+                        unfocusedBorderColor = Border
+                    )
+                )
+
                 Text("选择刷题模式", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(10.dp))
 

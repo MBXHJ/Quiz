@@ -8,6 +8,8 @@ import com.quizapp.data.db.entity.QuestionEntity
 import com.quizapp.data.db.entity.WrongRecordEntity
 import com.quizapp.data.repository.QuizRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -30,8 +32,12 @@ data class QuestionUiState(
     val answeredCount: Int = 0,
     val showJumpDialog: Boolean = false,
     val isFinishing: Boolean = false,
-    val recordId: Long = -1L, // non-null when resuming from a practice record
-    val wrongQuestionIds: List<Long> = emptyList() // wrong question IDs for this session
+    val recordId: Long = -1L,
+    val wrongQuestionIds: List<Long> = emptyList(),
+    val isFavorite: Boolean = false,
+    val isMarked: Boolean = false,
+    val elapsedSeconds: Int = 0,
+    val startTime: Long = 0L
 )
 
 @HiltViewModel
@@ -41,6 +47,8 @@ class QuestionViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(QuestionUiState())
     val uiState: StateFlow<QuestionUiState> = _uiState.asStateFlow()
+
+    private var timerJob: Job? = null
 
     fun loadQuestions(bankId: Long, mode: String, restart: Boolean = false, recordId: Long = -1L, count: Int = 0) {
         viewModelScope.launch {
@@ -76,6 +84,19 @@ class QuestionViewModel @Inject constructor(
                         quizRepository.getQuestionsByIdsOnce(ids)
                     } else emptyList()
                 }
+                mode == "favorite" -> {
+                    val ids = quizRepository.getAllFavoriteIds()
+                    quizRepository.getQuestionsByIdsOnce(ids)
+                }
+                mode == "marked" -> {
+                    val ids = quizRepository.getAllMarkedIds()
+                    quizRepository.getQuestionsByIdsOnce(ids)
+                }
+                mode.startsWith("search_") -> {
+                    val query = mode.removePrefix("search_")
+                    val allQuestions = quizRepository.getAllQuestionsOnce(bankId)
+                    allQuestions.filter { it.content.contains(query, ignoreCase = true) }
+                }
                 else -> quizRepository.getAllQuestionsOnce(bankId)
             }
 
@@ -101,6 +122,8 @@ class QuestionViewModel @Inject constructor(
                 else -> 0
             }
 
+            val startTime = System.currentTimeMillis()
+
             _uiState.value = QuestionUiState(
                 questions = questions,
                 currentIndex = startIndex,
@@ -110,8 +133,17 @@ class QuestionViewModel @Inject constructor(
                 recordId = recordId,
                 answeredCount = restoredAnswered,
                 correctCount = restoredCorrect,
-                answeredSet = emptySet()
+                answeredSet = emptySet(),
+                startTime = startTime
             )
+
+            // Start elapsed timer
+            startTimer()
+
+            // Load favorite/mark status for the current question
+            if (questions.isNotEmpty()) {
+                loadFavoriteMarkStatus(questions[startIndex].id)
+            }
         }
     }
 
@@ -184,6 +216,7 @@ class QuestionViewModel @Inject constructor(
                 isMultiSelected = emptySet()
             )
             loadWrongCount(state.questions[state.currentIndex + 1].id)
+            loadFavoriteMarkStatus(state.questions[state.currentIndex + 1].id)
         }
     }
 
@@ -199,6 +232,7 @@ class QuestionViewModel @Inject constructor(
                 isMultiSelected = emptySet()
             )
             loadWrongCount(state.questions[state.currentIndex - 1].id)
+            loadFavoriteMarkStatus(state.questions[state.currentIndex - 1].id)
         }
     }
 
@@ -215,11 +249,40 @@ class QuestionViewModel @Inject constructor(
                 showJumpDialog = false
             )
             loadWrongCount(state.questions[index].id)
+            loadFavoriteMarkStatus(state.questions[index].id)
         }
     }
 
     fun toggleJumpDialog() {
         _uiState.value = _uiState.value.copy(showJumpDialog = !_uiState.value.showJumpDialog)
+    }
+
+    fun toggleFavorite() {
+        viewModelScope.launch {
+            val state = _uiState.value
+            val question = state.questions.getOrNull(state.currentIndex) ?: return@launch
+            val isFav = quizRepository.isFavorite(question.id)
+            if (isFav) {
+                quizRepository.removeFavorite(question.id)
+            } else {
+                quizRepository.addFavorite(question.id)
+            }
+            _uiState.value = _uiState.value.copy(isFavorite = !isFav)
+        }
+    }
+
+    fun toggleMark() {
+        viewModelScope.launch {
+            val state = _uiState.value
+            val question = state.questions.getOrNull(state.currentIndex) ?: return@launch
+            val isMkd = quizRepository.isMarked(question.id)
+            if (isMkd) {
+                quizRepository.removeMark(question.id)
+            } else {
+                quizRepository.addMark(question.id)
+            }
+            _uiState.value = _uiState.value.copy(isMarked = !isMkd)
+        }
     }
 
     /**
@@ -237,6 +300,9 @@ class QuestionViewModel @Inject constructor(
                 state.mode == "sequential" -> "顺序练习"
                 state.mode == "random" -> "随机刷题"
                 state.mode == "wrong" -> "错题重做"
+                state.mode == "favorite" -> "收藏练习"
+                state.mode == "marked" -> "标记练习"
+                state.mode.startsWith("search_") -> "搜索练习"
                 state.mode == "type_SINGLE" -> "单选题练习"
                 state.mode == "type_MULTI" -> "多选题练习"
                 state.mode == "type_JUDGE" -> "判断题练习"
@@ -256,7 +322,7 @@ class QuestionViewModel @Inject constructor(
                 wrongCount = state.answeredCount - state.correctCount,
                 wrongQuestionIds = wrongIdsJson,
                 isCompleted = state.answeredCount >= state.questions.size,
-                startTime = System.currentTimeMillis(),
+                startTime = if (state.startTime > 0L) state.startTime else System.currentTimeMillis(),
                 endTime = System.currentTimeMillis()
             )
 
@@ -273,6 +339,9 @@ class QuestionViewModel @Inject constructor(
                 quizRepository.clearPracticeProgress(state.bankId, state.mode)
             }
 
+            // Stop the timer
+            stopTimer()
+
             _uiState.value = _uiState.value.copy(isFinishing = false)
             onFinished()
         }
@@ -282,6 +351,14 @@ class QuestionViewModel @Inject constructor(
         viewModelScope.launch {
             val count = quizRepository.getWrongCount(questionId)
             _uiState.value = _uiState.value.copy(wrongCount = count)
+        }
+    }
+
+    private fun loadFavoriteMarkStatus(questionId: Long) {
+        viewModelScope.launch {
+            val isFav = quizRepository.isFavorite(questionId)
+            val isMkd = quizRepository.isMarked(questionId)
+            _uiState.value = _uiState.value.copy(isFavorite = isFav, isMarked = isMkd)
         }
     }
 
@@ -323,5 +400,25 @@ class QuestionViewModel @Inject constructor(
                 )
             )
         }
+    }
+
+    private fun startTimer() {
+        stopTimer()
+        timerJob = viewModelScope.launch {
+            while (true) {
+                delay(1000L)
+                _uiState.value = _uiState.value.copy(elapsedSeconds = _uiState.value.elapsedSeconds + 1)
+            }
+        }
+    }
+
+    private fun stopTimer() {
+        timerJob?.cancel()
+        timerJob = null
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        stopTimer()
     }
 }

@@ -7,6 +7,8 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import com.quizapp.data.db.dao.AnsweredQuestionDao
 import com.quizapp.data.db.dao.ExamRecordDao
+import com.quizapp.data.db.dao.FavoriteQuestionDao
+import com.quizapp.data.db.dao.MarkedQuestionDao
 import com.quizapp.data.db.dao.PracticeProgressDao
 import com.quizapp.data.db.dao.PracticeRecordDao
 import com.quizapp.data.db.dao.QuestionBankDao
@@ -14,6 +16,8 @@ import com.quizapp.data.db.dao.QuestionDao
 import com.quizapp.data.db.dao.WrongRecordDao
 import com.quizapp.data.db.entity.AnsweredQuestionEntity
 import com.quizapp.data.db.entity.ExamRecordEntity
+import com.quizapp.data.db.entity.FavoriteQuestionEntity
+import com.quizapp.data.db.entity.MarkedQuestionEntity
 import com.quizapp.data.db.entity.PracticeProgressEntity
 import com.quizapp.data.db.entity.PracticeRecordEntity
 import com.quizapp.data.db.entity.QuestionBankEntity
@@ -28,9 +32,11 @@ import com.quizapp.data.db.entity.WrongRecordEntity
         ExamRecordEntity::class,
         AnsweredQuestionEntity::class,
         PracticeProgressEntity::class,
-        PracticeRecordEntity::class
+        PracticeRecordEntity::class,
+        FavoriteQuestionEntity::class,
+        MarkedQuestionEntity::class
     ],
-    version = 4,
+    version = 5,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -42,6 +48,8 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun answeredQuestionDao(): AnsweredQuestionDao
     abstract fun practiceProgressDao(): PracticeProgressDao
     abstract fun practiceRecordDao(): PracticeRecordDao
+    abstract fun favoriteQuestionDao(): FavoriteQuestionDao
+    abstract fun markedQuestionDao(): MarkedQuestionDao
 
     companion object {
         @Volatile

@@ -64,6 +64,51 @@ fun ProfileScreen(
                     }
                 }
 
+                // ═══ 学习报告 ═══
+                item {
+                    Card(modifier = Modifier.fillMaxWidth().animateContentSize(), shape = RoundedCornerShape(14.dp), elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)) {
+                        Column(Modifier.padding(16.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Surface(modifier = Modifier.size(34.dp), shape = RoundedCornerShape(10.dp), color = Color(0xFF10B981).copy(alpha = 0.1f)) {
+                                    Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.Assessment, null, Modifier.size(20.dp), tint = Color(0xFF10B981)) }
+                                }
+                                Spacer(Modifier.width(10.dp))
+                                Text("学习报告", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                            }
+                            Spacer(Modifier.height(12.dp))
+                            // Total practice time
+                            val hours = s.totalPracticeTime / 3_600_000
+                            val minutes = (s.totalPracticeTime % 3_600_000) / 60_000
+                            Row(Modifier.fillMaxWidth()) {
+                                Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text(if (hours > 0) "${hours}h${minutes}min" else "${minutes}min", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = Color(0xFF10B981))
+                                        Text("练习时长", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+                                    }
+                                }
+                                Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text("${s.totalPracticeAnswered}", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = Color(0xFF2563EB))
+                                        Text("答题数", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+                                    }
+                                }
+                                Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text("${s.avgPracticeAccuracy}%", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = if (s.avgPracticeAccuracy >= 80) CorrectGreen else if (s.avgPracticeAccuracy >= 60) WarningOrange else WrongRed)
+                                        Text("平均正确率", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+                                    }
+                                }
+                                Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text("${s.bestPracticeAccuracy}%", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = CorrectGreen)
+                                        Text("最佳正确率", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
                 // ═══ Practice Records ═══
                 item {
                     Card(modifier = Modifier.fillMaxWidth().animateContentSize(), shape = RoundedCornerShape(14.dp), elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)) {
