@@ -30,7 +30,8 @@ data class QuestionUiState(
     val answeredCount: Int = 0,
     val showJumpDialog: Boolean = false,
     val isFinishing: Boolean = false,
-    val recordId: Long = -1L // non-null when resuming from a practice record
+    val recordId: Long = -1L, // non-null when resuming from a practice record
+    val wrongQuestionIds: List<Long> = emptyList() // wrong question IDs for this session
 )
 
 @HiltViewModel
@@ -65,6 +66,15 @@ class QuestionViewModel @Inject constructor(
                     val type = mode.removePrefix("type_")
                     val allQuestions = quizRepository.getAllQuestionsOnce(bankId)
                     allQuestions.filter { it.questionType == type }
+                }
+                mode.startsWith("record_wrong_") -> {
+                    // mode = "record_wrong_<recordId>"
+                    val recId = mode.removePrefix("record_wrong_").toLongOrNull() ?: 0
+                    val rec = quizRepository.getPracticeRecordById(recId)
+                    if (rec != null && rec.wrongQuestionIds.isNotBlank()) {
+                        val ids = rec.wrongQuestionIds.split(",").mapNotNull { it.trim().toLongOrNull() }
+                        quizRepository.getQuestionsByIdsOnce(ids)
+                    } else emptyList()
                 }
                 else -> quizRepository.getAllQuestionsOnce(bankId)
             }
@@ -123,6 +133,7 @@ class QuestionViewModel @Inject constructor(
             val newAnswered = state.answeredSet + state.currentIndex
             val newCorrectCount = state.correctCount + if (isCorrect) 1 else 0
             val newAnsweredCount = state.answeredCount + 1
+            val newWrongIds = if (!isCorrect) state.wrongQuestionIds + question.id else state.wrongQuestionIds
 
             _uiState.value = state.copy(
                 selectedAnswer = answer,
@@ -221,15 +232,18 @@ class QuestionViewModel @Inject constructor(
         _uiState.value = state.copy(isFinishing = true)
 
         viewModelScope.launch {
-            val modeLabel = when (state.mode) {
-                "sequential" -> "顺序练习"
-                "random" -> "随机刷题"
-                "wrong" -> "错题重做"
-                "type_SINGLE" -> "单选题练习"
-                "type_MULTI" -> "多选题练习"
-                "type_JUDGE" -> "判断题练习"
+            val modeLabel = when {
+                state.mode.startsWith("record_wrong_") -> "错题重做"
+                state.mode == "sequential" -> "顺序练习"
+                state.mode == "random" -> "随机刷题"
+                state.mode == "wrong" -> "错题重做"
+                state.mode == "type_SINGLE" -> "单选题练习"
+                state.mode == "type_MULTI" -> "多选题练习"
+                state.mode == "type_JUDGE" -> "判断题练习"
                 else -> state.mode
             }
+
+            val wrongIdsJson = state.wrongQuestionIds.joinToString(",")
 
             val record = PracticeRecordEntity(
                 id = if (state.recordId > 0) state.recordId else 0,
@@ -240,6 +254,7 @@ class QuestionViewModel @Inject constructor(
                 answeredCount = state.answeredCount,
                 correctCount = state.correctCount,
                 wrongCount = state.answeredCount - state.correctCount,
+                wrongQuestionIds = wrongIdsJson,
                 isCompleted = state.answeredCount >= state.questions.size,
                 startTime = System.currentTimeMillis(),
                 endTime = System.currentTimeMillis()

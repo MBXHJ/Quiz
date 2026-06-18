@@ -66,7 +66,12 @@ class TxtParser : QuestionParser {
                 if (options.isEmpty()) {
                     questionType = "JUDGE"
                 }
-                if (answer.length > 1 && !answer.contains("正确") && !answer.contains("错误")) {
+                // Check if options are "A. 正确 / B. 错误" -> JUDGE
+                val optionTexts = options.map { it.substringAfter(". ").trim() }
+                if (optionTexts.size == 2 && optionTexts.containsAll(listOf("正确", "错误"))) {
+                    questionType = "JUDGE"
+                }
+                if (answer.length > 1 && !answer.contains("正确") && !answer.contains("错误") && questionType != "JUDGE") {
                     questionType = "MULTI"
                 }
 

@@ -102,6 +102,15 @@ fun ProfileScreen(
                                             Column(horizontalAlignment = Alignment.End) {
                                                 Text("$accuracy%", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = if (accuracy >= 80) CorrectGreen else if (accuracy >= 60) WarningOrange else WrongRed)
                                                 Text("${rec.correctCount}/${rec.answeredCount}", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+                                                if (rec.wrongQuestionIds.isNotBlank()) {
+                                                    Spacer(Modifier.height(2.dp))
+                                                    Surface(
+                                                        onClick = { onRestartPractice(rec.bankId, "record_wrong_${rec.id}", rec.id) },
+                                                        shape = RoundedCornerShape(6.dp), color = WrongRed.copy(alpha = 0.1f)
+                                                    ) {
+                                                        Text("错题重做", Modifier.padding(horizontal = 6.dp, vertical = 2.dp), style = MaterialTheme.typography.labelSmall, color = WrongRed, fontWeight = FontWeight.SemiBold)
+                                                    }
+                                                }
                                             }
                                             Spacer(Modifier.width(4.dp))
                                             IconButton(onClick = { showDelPractice = true }, modifier = Modifier.size(32.dp)) {

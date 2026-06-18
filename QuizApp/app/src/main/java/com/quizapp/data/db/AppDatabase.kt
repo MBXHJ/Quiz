@@ -30,7 +30,7 @@ import com.quizapp.data.db.entity.WrongRecordEntity
         PracticeProgressEntity::class,
         PracticeRecordEntity::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 @TypeConverters(Converters::class)

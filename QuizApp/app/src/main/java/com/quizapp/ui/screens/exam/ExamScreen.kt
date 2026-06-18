@@ -170,15 +170,23 @@ fun ExamScreen(
                             shape = RoundedCornerShape(10.dp), modifier = Modifier.height(46.dp),
                             colors = ButtonDefaults.outlinedButtonColors(contentColor = Primary)
                         ) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null, Modifier.size(18.dp)); Spacer(Modifier.width(4.dp)); Text("上一题") }
-                        val last = s.currentIndex == s.questions.size - 1
-                        Button(
-                            onClick = {
-                                val answered = s.questions.count { q -> if (q.questionType == "MULTI") s.multiSelections.containsKey(q.id) else s.answers.containsKey(q.id) }
-                                if (answered == s.questions.size) viewModel.finishExam(onFinish) else showConfirm = true
-                            },
-                            shape = RoundedCornerShape(10.dp), modifier = Modifier.height(46.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Primary, contentColor = Color.White)
-                        ) { Icon(Icons.Default.CheckCircle, null, Modifier.size(18.dp)); Spacer(Modifier.width(4.dp)); Text("交卷", fontWeight = FontWeight.SemiBold) }
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            if (s.currentIndex < s.questions.size - 1) {
+                                Button(
+                                    onClick = { viewModel.nextQuestion() },
+                                    shape = RoundedCornerShape(10.dp), modifier = Modifier.height(46.dp),
+                                    colors = ButtonDefaults.buttonColors(containerColor = Primary, contentColor = Color.White)
+                                ) { Text("下一题"); Spacer(Modifier.width(4.dp)); Icon(Icons.AutoMirrored.Filled.ArrowForward, null, Modifier.size(18.dp)) }
+                            }
+                            Button(
+                                onClick = {
+                                    val unanswered = s.questions.size - s.questions.count { q -> if (q.questionType == "MULTI") s.multiSelections.containsKey(q.id) else s.answers.containsKey(q.id) }
+                                    if (unanswered == 0) viewModel.finishExam(onFinish) else showConfirm = true
+                                },
+                                shape = RoundedCornerShape(10.dp), modifier = Modifier.height(46.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = CorrectGreen, contentColor = Color.White)
+                            ) { Icon(Icons.Default.CheckCircle, null, Modifier.size(18.dp)); Spacer(Modifier.width(4.dp)); Text("交卷", fontWeight = FontWeight.SemiBold) }
+                        }
                     }
                 }
             }

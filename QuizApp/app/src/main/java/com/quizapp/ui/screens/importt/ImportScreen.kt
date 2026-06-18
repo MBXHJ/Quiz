@@ -61,7 +61,7 @@ fun ImportScreen(
             Text("创建新题库", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(6.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                listOf("txt", "md", "docx", "xlsx").forEach { fmt ->
+                listOf("txt", "md", "docx", "xlsx", "json").forEach { fmt ->
                     Surface(shape = RoundedCornerShape(6.dp), color = BorderLight) {
                         Text(".$fmt", Modifier.padding(horizontal = 8.dp, vertical = 3.dp), style = MaterialTheme.typography.labelSmall, color = TextTertiary)
                     }
@@ -114,7 +114,7 @@ fun ImportScreen(
                 }
                 else -> Button(
                     onClick = {
-                        viewModel.clearError(); picker.launch(arrayOf("text/plain", "text/markdown", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "application/vnd.ms-excel"))
+                        viewModel.clearError(); picker.launch(arrayOf("text/plain", "text/markdown", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "application/vnd.ms-excel", "application/json"))
                     },
                     modifier = Modifier.fillMaxWidth().height(54.dp), enabled = s.bankName.isNotBlank(),
                     shape = RoundedCornerShape(12.dp), colors = ButtonDefaults.buttonColors(containerColor = Primary)

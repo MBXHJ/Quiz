@@ -27,6 +27,7 @@ data class PracticeRecordEntity(
     val answeredCount: Int,
     val correctCount: Int,
     val wrongCount: Int,
+    val wrongQuestionIds: String = "", // JSON array of question IDs that were wrong
     val isCompleted: Boolean = false,
     val startTime: Long = System.currentTimeMillis(),
     val endTime: Long = System.currentTimeMillis()

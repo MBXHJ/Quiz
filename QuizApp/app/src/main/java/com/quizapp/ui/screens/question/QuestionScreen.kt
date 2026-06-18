@@ -36,6 +36,7 @@ fun QuestionScreen(
     val s by viewModel.uiState.collectAsState()
 
     val modeTitle = when {
+        mode.startsWith("record_wrong_") -> "错题重做"
         mode == "sequential" -> "顺序练习"
         mode == "random" -> "随机刷题"
         mode == "wrong" -> "错题重做"
