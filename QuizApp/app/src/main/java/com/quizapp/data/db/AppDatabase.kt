@@ -13,6 +13,7 @@ import com.quizapp.data.db.dao.PracticeProgressDao
 import com.quizapp.data.db.dao.PracticeRecordDao
 import com.quizapp.data.db.dao.QuestionBankDao
 import com.quizapp.data.db.dao.QuestionDao
+import com.quizapp.data.db.dao.QuestionNoteDao
 import com.quizapp.data.db.dao.WrongRecordDao
 import com.quizapp.data.db.entity.AnsweredQuestionEntity
 import com.quizapp.data.db.entity.ExamRecordEntity
@@ -22,6 +23,7 @@ import com.quizapp.data.db.entity.PracticeProgressEntity
 import com.quizapp.data.db.entity.PracticeRecordEntity
 import com.quizapp.data.db.entity.QuestionBankEntity
 import com.quizapp.data.db.entity.QuestionEntity
+import com.quizapp.data.db.entity.QuestionNoteEntity
 import com.quizapp.data.db.entity.WrongRecordEntity
 
 @Database(
@@ -34,9 +36,10 @@ import com.quizapp.data.db.entity.WrongRecordEntity
         PracticeProgressEntity::class,
         PracticeRecordEntity::class,
         FavoriteQuestionEntity::class,
-        MarkedQuestionEntity::class
+        MarkedQuestionEntity::class,
+        QuestionNoteEntity::class
     ],
-    version = 5,
+    version = 6,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -50,6 +53,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun practiceRecordDao(): PracticeRecordDao
     abstract fun favoriteQuestionDao(): FavoriteQuestionDao
     abstract fun markedQuestionDao(): MarkedQuestionDao
+    abstract fun questionNoteDao(): QuestionNoteDao
 
     companion object {
         @Volatile

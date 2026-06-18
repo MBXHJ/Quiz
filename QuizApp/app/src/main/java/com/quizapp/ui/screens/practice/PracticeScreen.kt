@@ -154,6 +154,8 @@ fun PracticeScreen(
                 ModeCard(Icons.Default.Assignment, "模拟考试", "按比例随机抽题，模拟真实考场", CorrectGreen) { onStartExam() }
                 ModeCard(Icons.Default.Shuffle, "随机刷题", "随机抽取题目，灵活练习", Color(0xFF8B5CF6)) { showRandomDlg = true }
                 ModeCard(Icons.Default.Category, "题型分类", "按单选、多选、判断题分类刷题", WarningOrange) { showTypeDlg = true }
+                ModeCard(Icons.Default.StarBorder, "收藏题目", "查看收藏的题目", Color(0xFFFFC107)) { onStartPractice("favorite") }
+                ModeCard(Icons.Default.OutlinedFlag, "标记题目", "查看标记的题目", Color(0xFFFF9800)) { onStartPractice("marked") }
                 AnimatedVisibility(s.wrongQuestionCount > 0, enter = fadeIn() + expandVertically(), exit = fadeOut() + shrinkVertically()) {
                     ModeCard(Icons.Default.AutoFixHigh, "错题重做", "共 ${s.wrongQuestionCount} 道错题，针对性巩固提分", WrongRed) { onStartPractice("wrong") }
                 }

@@ -8,6 +8,7 @@ import com.quizapp.data.db.dao.PracticeProgressDao
 import com.quizapp.data.db.dao.PracticeRecordDao
 import com.quizapp.data.db.dao.QuestionBankDao
 import com.quizapp.data.db.dao.QuestionDao
+import com.quizapp.data.db.dao.QuestionNoteDao
 import com.quizapp.data.db.dao.WrongRecordDao
 import com.quizapp.data.db.dao.WrongWithQuestion
 import com.quizapp.data.db.entity.AnsweredQuestionEntity
@@ -18,6 +19,7 @@ import com.quizapp.data.db.entity.PracticeProgressEntity
 import com.quizapp.data.db.entity.PracticeRecordEntity
 import com.quizapp.data.db.entity.QuestionBankEntity
 import com.quizapp.data.db.entity.QuestionEntity
+import com.quizapp.data.db.entity.QuestionNoteEntity
 import com.quizapp.data.db.entity.WrongRecordEntity
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
@@ -33,7 +35,8 @@ class QuizRepository @Inject constructor(
     private val practiceProgressDao: PracticeProgressDao,
     private val practiceRecordDao: PracticeRecordDao,
     private val favoriteQuestionDao: FavoriteQuestionDao,
-    private val markedQuestionDao: MarkedQuestionDao
+    private val markedQuestionDao: MarkedQuestionDao,
+    private val questionNoteDao: QuestionNoteDao
 ) {
     // Question Banks
     fun getAllBanks(): Flow<List<QuestionBankEntity>> = bankDao.getAllBanks()
@@ -119,6 +122,15 @@ class QuizRepository @Inject constructor(
     suspend fun getAllPracticeRecordsOnce(): List<PracticeRecordEntity> =
         practiceRecordDao.getAllRecordsOnce()
 
+    suspend fun updatePracticeRecord(record: PracticeRecordEntity) =
+        practiceRecordDao.updateRecord(record)
+
+    suspend fun getPracticeRecordById(id: Long): PracticeRecordEntity? =
+        practiceRecordDao.getRecordById(id)
+
+    suspend fun deletePracticeRecordById(id: Long) =
+        practiceRecordDao.deleteRecordById(id)
+
     // Favorites
     suspend fun getAllFavoriteIds(): List<Long> = favoriteQuestionDao.getAllFavoriteIds()
     suspend fun isFavorite(questionId: Long): Boolean = favoriteQuestionDao.isFavorite(questionId) != null
@@ -133,12 +145,9 @@ class QuizRepository @Inject constructor(
     suspend fun removeMark(questionId: Long) = markedQuestionDao.removeMark(questionId)
     suspend fun getMarkedCount(): Int = markedQuestionDao.getMarkedCount()
 
-    suspend fun updatePracticeRecord(record: PracticeRecordEntity) =
-        practiceRecordDao.updateRecord(record)
-
-    suspend fun getPracticeRecordById(id: Long): PracticeRecordEntity? =
-        practiceRecordDao.getRecordById(id)
-
-    suspend fun deletePracticeRecordById(id: Long) =
-        practiceRecordDao.deleteRecordById(id)
+    // Notes
+    suspend fun getNote(questionId: Long): QuestionNoteEntity? = questionNoteDao.getNote(questionId)
+    suspend fun saveNote(questionId: Long, note: String) =
+        questionNoteDao.saveNote(QuestionNoteEntity(questionId = questionId, note = note, updatedTime = System.currentTimeMillis()))
+    suspend fun deleteNote(questionId: Long) = questionNoteDao.deleteNote(questionId)
 }

@@ -10,6 +10,7 @@ import com.quizapp.data.db.dao.PracticeProgressDao
 import com.quizapp.data.db.dao.PracticeRecordDao
 import com.quizapp.data.db.dao.QuestionBankDao
 import com.quizapp.data.db.dao.QuestionDao
+import com.quizapp.data.db.dao.QuestionNoteDao
 import com.quizapp.data.db.dao.WrongRecordDao
 import dagger.Module
 import dagger.Provides
@@ -54,4 +55,7 @@ object DatabaseModule {
 
     @Provides
     fun provideMarkedQuestionDao(db: AppDatabase): MarkedQuestionDao = db.markedQuestionDao()
+
+    @Provides
+    fun provideQuestionNoteDao(db: AppDatabase): QuestionNoteDao = db.questionNoteDao()
 }
