@@ -3,6 +3,8 @@ package com.quizapp.ui.theme
 import androidx.compose.animation.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -11,6 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -61,7 +64,9 @@ fun StatBadge(icon: ImageVector, value: String, label: String, tint: Color = Col
         }
     }
     if (onClick != null) {
-        Surface(onClick = onClick, shape = RoundedCornerShape(12.dp), color = Color.Transparent) { content() }
+        Box(Modifier.clickable(onClick = onClick, indication = null, interactionSource = remember { MutableInteractionSource() }), contentAlignment = Alignment.Center) {
+            content()
+        }
     } else {
         content()
     }
