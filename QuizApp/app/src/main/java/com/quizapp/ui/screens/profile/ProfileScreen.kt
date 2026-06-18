@@ -284,8 +284,8 @@ fun ProfileScreen(
                                 Text("关于", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                             }
                             Spacer(Modifier.height(10.dp))
-                            Text("刷题助手 v2.0", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
-                            Text("支持导入 txt/md/docx/xlsx 题库\n顺序练习 · 模拟考试 · 题型分类 · 错题重做", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+                            Text("刷题助手 v1.5", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                            Text("支持导入 txt/md/docx/xlsx/json 题库\n顺序练习 · 随机刷题 · 题型分类 · 错题重做\n模拟考试 · 收藏 · 搜索 · 标记 · 笔记 · 计时", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
                             Spacer(Modifier.height(10.dp)); HorizontalDivider(color = BorderLight)
                             Spacer(Modifier.height(10.dp))
                             Row(verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Default.Copyright, null, Modifier.size(16.dp), tint = TextSecondary); Spacer(Modifier.width(4.dp)); Text("著作权声明", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold) }
