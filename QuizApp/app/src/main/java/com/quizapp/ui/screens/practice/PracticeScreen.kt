@@ -2,6 +2,8 @@ package com.quizapp.ui.screens.practice
 
 import androidx.compose.animation.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -50,9 +52,9 @@ fun PracticeScreen(
                     Text(s.bank?.name ?: "", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = Color.White)
                     Spacer(Modifier.height(20.dp))
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                        StatBadge(Icons.Default.MenuBook, "${s.questionCount}", "总题数")
-                        StatBadge(Icons.Default.CheckCircle, "${s.answeredQuestionCount}", "已完成", Color(0xFFA7F3D0))
-                        StatBadge(Icons.Default.ErrorOutline, "${s.wrongQuestionCount}", "错题", Color(0xFFFFCDD2))
+                        StatBadge(Icons.Default.MenuBook, "${s.questionCount}", "总题数", onClick = { })
+                        StatBadge(Icons.Default.CheckCircle, "${s.answeredQuestionCount}", "已完成", Color(0xFFA7F3D0), onClick = { onStartPractice("sequential") })
+                        StatBadge(Icons.Default.ErrorOutline, "${s.wrongQuestionCount}", "错题", Color(0xFFFFCDD2), onClick = { onStartPractice("wrong") })
                     }
                     if (s.questionCount > 0) {
                         Spacer(Modifier.height(16.dp))
@@ -71,8 +73,10 @@ fun PracticeScreen(
 
             Spacer(Modifier.height(22.dp))
 
-            // ═══ Mode cards ═══
-            Column(Modifier.padding(horizontal = 16.dp)) {
+            // ═══ Mode cards (scrollable) ═══
+            Column(
+                Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)
+            ) {
                 Text("选择刷题模式", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(10.dp))
 

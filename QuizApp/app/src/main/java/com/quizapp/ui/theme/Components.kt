@@ -51,12 +51,19 @@ fun GradientHeader(modifier: Modifier = Modifier, content: @Composable ColumnSco
 
 // ── 3-value stat badge (icon + value + label) for header rows ──
 @Composable
-fun StatBadge(icon: ImageVector, value: String, label: String, tint: Color = Color.White) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Icon(icon, label, modifier = Modifier.size(20.dp), tint = tint.copy(alpha = 0.85f))
-        Spacer(Modifier.height(4.dp))
-        Text(value, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = tint)
-        Text(label, style = MaterialTheme.typography.labelSmall, color = tint.copy(alpha = 0.75f))
+fun StatBadge(icon: ImageVector, value: String, label: String, tint: Color = Color.White, onClick: (() -> Unit)? = null) {
+    val content = @Composable {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(icon, label, modifier = Modifier.size(20.dp), tint = tint.copy(alpha = 0.85f))
+            Spacer(Modifier.height(4.dp))
+            Text(value, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = tint)
+            Text(label, style = MaterialTheme.typography.labelSmall, color = tint.copy(alpha = 0.75f))
+        }
+    }
+    if (onClick != null) {
+        Surface(onClick = onClick, shape = RoundedCornerShape(12.dp), color = Color.Transparent) { content() }
+    } else {
+        content()
     }
 }
 
