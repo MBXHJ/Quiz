@@ -51,10 +51,10 @@ fun PracticeScreen(
                 Column(Modifier.fillMaxWidth().padding(28.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(s.bank?.name ?: "", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = Color.White)
                     Spacer(Modifier.height(20.dp))
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                        StatBadge(Icons.Default.MenuBook, "${s.questionCount}", "总题数", onClick = { })
-                        StatBadge(Icons.Default.CheckCircle, "${s.answeredQuestionCount}", "已完成", Color(0xFFA7F3D0), onClick = { onStartPractice("sequential") })
-                        StatBadge(Icons.Default.ErrorOutline, "${s.wrongQuestionCount}", "错题", Color(0xFFFFCDD2), onClick = { onStartPractice("wrong") })
+                    Row(Modifier.fillMaxWidth()) {
+                        StatBadge(Icons.Default.MenuBook, "${s.questionCount}", "总题数", modifier = Modifier.weight(1f))
+                        StatBadge(Icons.Default.CheckCircle, "${s.answeredQuestionCount}", "已完成", Color(0xFFA7F3D0), Modifier.weight(1f), onClick = { onStartPractice("sequential") })
+                        StatBadge(Icons.Default.ErrorOutline, "${s.wrongQuestionCount}", "错题", Color(0xFFFFCDD2), Modifier.weight(1f), onClick = { onStartPractice("wrong") })
                     }
                     if (s.questionCount > 0) {
                         Spacer(Modifier.height(16.dp))
