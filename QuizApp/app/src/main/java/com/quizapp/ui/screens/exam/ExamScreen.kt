@@ -27,7 +27,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 @Composable
 fun ExamScreen(
     bankId: Long, onBack: () -> Unit,
-    onFinish: (score: Int, total: Int, correct: Int) -> Unit,
+    onFinish: (score: Int, total: Int, correct: Int, examRecordId: Long) -> Unit,
     viewModel: ExamViewModel = hiltViewModel()
 ) {
     LaunchedEffect(bankId) { viewModel.loadExam(bankId) }

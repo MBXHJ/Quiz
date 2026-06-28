@@ -13,9 +13,9 @@ sealed class Screen(val route: String) {
     data object Exam : Screen("exam/{bankId}") {
         fun createRoute(bankId: Long) = "exam/$bankId"
     }
-    data object ExamResult : Screen("exam_result/{bankId}/{score}/{total}/{correct}") {
-        fun createRoute(bankId: Long, score: Int, total: Int, correct: Int): String {
-            return "exam_result/$bankId/$score/$total/$correct"
+    data object ExamResult : Screen("exam_result/{bankId}/{score}/{total}/{correct}?examRecordId={examRecordId}") {
+        fun createRoute(bankId: Long, score: Int, total: Int, correct: Int, examRecordId: Long = 0L): String {
+            return "exam_result/$bankId/$score/$total/$correct?examRecordId=$examRecordId"
         }
     }
     data object Profile : Screen("profile")

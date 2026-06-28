@@ -123,40 +123,46 @@ class ProfileViewModel @Inject constructor(
 
     fun exportWrongQuestions() {
         viewModelScope.launch {
-            val banks = quizRepository.getAllBanks().first()
-            val lines = mutableListOf<String>()
-            lines.add("刷题助手 - 错题集")
-            lines.add("导出时间：${java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.getDefault()).format(java.util.Date())}")
-            lines.add("")
-            for (bank in banks) {
-                val wrongRecords = quizRepository.getWrongRecordsByBankOnce(bank.id)
-                if (wrongRecords.isEmpty()) continue
-                val ids = wrongRecords.map { it.record.questionId }
-                val questions = quizRepository.getQuestionsByIdsOnce(ids)
-                lines.add("题库：${bank.name}")
+            try {
+                val banks = quizRepository.getAllBanks().first()
+                val lines = mutableListOf<String>()
+                lines.add("刷题助手 - 错题集")
+                lines.add("导出时间：${java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.getDefault()).format(java.util.Date())}")
                 lines.add("")
-                questions.forEach { q ->
-                    val typeLabel = when (q.questionType) { "SINGLE" -> "单选题"; "MULTI" -> "多选题"; "JUDGE" -> "判断题"; else -> q.questionType }
-                    lines.add("类型：$typeLabel")
-                    lines.add("题目：${q.content}")
-                    q.options.split("|||").filter { it.isNotBlank() }.forEach { lines.add("  $it") }
-                    lines.add("答案：${q.answer}")
-                    if (q.analysis.isNotBlank()) lines.add("解析：${q.analysis}")
+                for (bank in banks) {
+                    val wrongRecords = quizRepository.getWrongRecordsByBankOnce(bank.id)
+                    if (wrongRecords.isEmpty()) continue
+                    val ids = wrongRecords.map { it.record.questionId }
+                    val questions = quizRepository.getQuestionsByIdsOnce(ids)
+                    lines.add("题库：${bank.name}")
                     lines.add("")
+                    questions.forEach { q ->
+                        val typeLabel = when (q.questionType) { "SINGLE" -> "单选题"; "MULTI" -> "多选题"; "JUDGE" -> "判断题"; else -> q.questionType }
+                        lines.add("类型：$typeLabel")
+                        lines.add("题目：${q.content}")
+                        q.options.split("|||").filter { it.isNotBlank() }.forEach { lines.add("  $it") }
+                        lines.add("答案：${q.answer}")
+                        if (q.analysis.isNotBlank()) lines.add("解析：${q.analysis}")
+                        lines.add("")
+                    }
                 }
+                if (lines.size <= 3) { lines.add("暂无错题记录！"); lines.add("") }
+                val text = lines.joinToString("\n")
+                val sdf = java.text.SimpleDateFormat("yyyyMMdd", java.util.Locale.getDefault())
+                val file = java.io.File(context.cacheDir, "错题集_${sdf.format(java.util.Date())}.txt")
+                file.writeText(text)
+                val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+                val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_STREAM, uri)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
+                val chooser = Intent.createChooser(shareIntent, "导出错题")
+                chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                context.startActivity(chooser)
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
-            if (lines.size <= 3) { lines.add("暂无错题记录！"); lines.add("") }
-            val text = lines.joinToString("\n")
-            val sdf = java.text.SimpleDateFormat("yyyyMMdd", java.util.Locale.getDefault())
-            val file = java.io.File(context.cacheDir, "错题集_${sdf.format(java.util.Date())}.txt")
-            file.writeText(text)
-            val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
-            val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                type = "text/plain"
-                putExtra(Intent.EXTRA_STREAM, uri)
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            }
-            context.startActivity(Intent.createChooser(shareIntent, "导出错题"))
         }
     }
 }

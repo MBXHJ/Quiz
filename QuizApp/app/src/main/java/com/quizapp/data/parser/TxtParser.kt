@@ -75,6 +75,24 @@ class TxtParser : QuestionParser {
                     questionType = "MULTI"
                 }
 
+                // Normalize answer format
+                when {
+                    questionType == "MULTI" -> {
+                        // "A, C" → "AC", "A, C, D" → "ACD"
+                        answer = answer.replace(Regex("""[\s,，、]+"""), "")
+                            .uppercase().toCharArray().sorted().joinToString("")
+                    }
+                    questionType == "JUDGE" && options.size == 2 -> {
+                        // Map A→"正确", B→"错误" for judge questions with options
+                        val optMap = options.associate {
+                            it.substringBefore(".").trim().uppercase() to it.substringAfter(". ").trim()
+                        }
+                        if (optMap.values.containsAll(listOf("正确", "错误"))) {
+                            answer = optMap[answer.trim().uppercase()] ?: answer
+                        }
+                    }
+                }
+
                 questions.add(
                     ParsedQuestion(
                         content = questionContent,

@@ -73,6 +73,7 @@ class QuizRepository @Inject constructor(
     fun getRecordsByBank(bankId: Long): Flow<List<ExamRecordEntity>> = examRecordDao.getRecordsByBank(bankId)
     suspend fun insertRecord(record: ExamRecordEntity): Long = examRecordDao.insertRecord(record)
     suspend fun deleteExamRecordById(id: Long) = examRecordDao.deleteRecordById(id)
+    suspend fun getExamRecordById(id: Long): ExamRecordEntity? = examRecordDao.getRecordById(id)
 
     // Answered Questions
     suspend fun markQuestionAnswered(questionId: Long, bankId: Long) =

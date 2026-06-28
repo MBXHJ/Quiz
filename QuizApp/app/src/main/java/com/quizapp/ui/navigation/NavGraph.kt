@@ -101,8 +101,8 @@ fun NavGraph(navController: NavHostController) {
             ExamScreen(
                 bankId = bankId,
                 onBack = { navController.popBackStack() },
-                onFinish = { score, total, correct ->
-                    navController.navigate(Screen.ExamResult.createRoute(bankId, score, total, correct)) {
+                onFinish = { score, total, correct, examRecordId ->
+                    navController.navigate(Screen.ExamResult.createRoute(bankId, score, total, correct, examRecordId)) {
                         popUpTo(Screen.Exam.route) { inclusive = true }
                     }
                 }
@@ -115,19 +115,28 @@ fun NavGraph(navController: NavHostController) {
                 navArgument("bankId") { type = NavType.LongType },
                 navArgument("score") { type = NavType.IntType },
                 navArgument("total") { type = NavType.IntType },
-                navArgument("correct") { type = NavType.IntType }
+                navArgument("correct") { type = NavType.IntType },
+                navArgument("examRecordId") { type = NavType.LongType; defaultValue = 0L }
             )
         ) { backStackEntry ->
             val bankId = backStackEntry.arguments?.getLong("bankId") ?: return@composable
             val score = backStackEntry.arguments?.getInt("score") ?: 0
             val total = backStackEntry.arguments?.getInt("total") ?: 0
             val correct = backStackEntry.arguments?.getInt("correct") ?: 0
+            val examRecordId = backStackEntry.arguments?.getLong("examRecordId") ?: 0L
             ExamResultScreen(
                 score = score,
                 total = total,
                 correct = correct,
+                bankId = bankId,
+                examRecordId = examRecordId,
                 onBack = {
-                    navController.popBackStack(Screen.BankList.route, inclusive = false)
+                    navController.popBackStack()
+                },
+                onReviewWrong = {
+                    navController.navigate(Screen.Question.createRoute(bankId, "exam_review_$examRecordId")) {
+                        popUpTo(Screen.BankList.route)
+                    }
                 }
             )
         }
@@ -140,6 +149,9 @@ fun NavGraph(navController: NavHostController) {
                     navController.navigate(Screen.Question.createRoute(bankId, mode, recordId = recordId)) {
                         popUpTo(Screen.BankList.route)
                     }
+                },
+                onExamRecordClick = { bankId, score, total, correct, examRecordId ->
+                    navController.navigate(Screen.ExamResult.createRoute(bankId, score, total, correct, examRecordId))
                 }
             )
         }

@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import com.quizapp.util.normalizeAnswer
 import javax.inject.Inject
 
 data class QuestionUiState(
@@ -78,11 +79,27 @@ class QuestionViewModel @Inject constructor(
                     allQuestions.filter { it.questionType == type }
                 }
                 mode.startsWith("record_wrong_") -> {
-                    // mode = "record_wrong_<recordId>"
-                    val recId = mode.removePrefix("record_wrong_").toLongOrNull() ?: 0
-                    val rec = quizRepository.getPracticeRecordById(recId)
-                    if (rec != null && rec.wrongQuestionIds.isNotBlank()) {
-                        val ids = rec.wrongQuestionIds.split(",").mapNotNull { it.trim().toLongOrNull() }
+                    // mode = "record_wrong_<recordId>" or "record_wrong_<id1,id2,id3>"
+                    val suffix = mode.removePrefix("record_wrong_")
+                    val recId = suffix.toLongOrNull()
+                    if (recId != null) {
+                        val rec = quizRepository.getPracticeRecordById(recId)
+                        if (rec != null && rec.wrongQuestionIds.isNotBlank()) {
+                            val ids = rec.wrongQuestionIds.split(",").mapNotNull { it.trim().toLongOrNull() }
+                            quizRepository.getQuestionsByIdsOnce(ids)
+                        } else emptyList()
+                    } else {
+                        // Direct comma-separated question IDs (used for exam review)
+                        val ids = suffix.split(",").mapNotNull { it.trim().toLongOrNull() }
+                        quizRepository.getQuestionsByIdsOnce(ids)
+                    }
+                }
+                mode.startsWith("exam_review_") -> {
+                    // mode = "exam_review_<examRecordId>" — load wrong questions from exam record
+                    val examRecordId = mode.removePrefix("exam_review_").toLongOrNull() ?: 0
+                    val record = quizRepository.getExamRecordById(examRecordId)
+                    if (record != null && record.questionDetails.isNotBlank()) {
+                        val ids = record.questionDetails.split(",").mapNotNull { it.trim().toLongOrNull() }
                         quizRepository.getQuestionsByIdsOnce(ids)
                     } else emptyList()
                 }
@@ -163,7 +180,7 @@ class QuestionViewModel @Inject constructor(
             }
             _uiState.value = state.copy(isMultiSelected = newSelected)
         } else {
-            val isCorrect = answer == question.answer
+            val isCorrect = normalizeAnswer(answer, question.questionType) == normalizeAnswer(question.answer, question.questionType)
             val newAnswered = state.answeredSet + state.currentIndex
             val newCorrectCount = state.correctCount + if (isCorrect) 1 else 0
             val newAnsweredCount = state.answeredCount + 1
@@ -188,7 +205,7 @@ class QuestionViewModel @Inject constructor(
         val question = state.questions.getOrNull(state.currentIndex) ?: return
         val answer = state.isMultiSelected.sorted().joinToString("")
 
-        val isCorrect = answer == question.answer
+        val isCorrect = normalizeAnswer(answer, question.questionType) == normalizeAnswer(question.answer, question.questionType)
         val newAnswered = state.answeredSet + state.currentIndex
         val newCorrectCount = state.correctCount + if (isCorrect) 1 else 0
         val newAnsweredCount = state.answeredCount + 1
@@ -322,6 +339,7 @@ class QuestionViewModel @Inject constructor(
         viewModelScope.launch {
             val modeLabel = when {
                 state.mode.startsWith("record_wrong_") -> "错题重做"
+                state.mode.startsWith("exam_review_") -> "考试回顾"
                 state.mode == "sequential" -> "顺序练习"
                 state.mode == "random" -> "随机刷题"
                 state.mode == "wrong" -> "错题重做"

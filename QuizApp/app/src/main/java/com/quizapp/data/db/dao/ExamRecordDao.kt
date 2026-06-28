@@ -20,4 +20,7 @@ interface ExamRecordDao {
 
     @Query("DELETE FROM exam_records WHERE bankId = :bankId")
     suspend fun deleteRecordsByBank(bankId: Long)
+
+    @Query("SELECT * FROM exam_records WHERE id = :id")
+    suspend fun getRecordById(id: Long): ExamRecordEntity?
 }

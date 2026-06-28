@@ -25,6 +25,7 @@ fun ProfileScreen(
     onBack: () -> Unit,
     onSettingsClick: () -> Unit = {},
     onRestartPractice: (bankId: Long, mode: String, recordId: Long) -> Unit = { _, _, _ -> },
+    onExamRecordClick: (bankId: Long, score: Int, total: Int, correct: Int, examRecordId: Long) -> Unit = { _, _, _, _, _ -> },
     viewModel: ProfileViewModel = hiltViewModel()
 ) {
     LaunchedEffect(Unit) { viewModel.loadStats() }
@@ -221,7 +222,10 @@ fun ProfileScreen(
                                     val date = SimpleDateFormat("MM-dd HH:mm", Locale.getDefault()).format(Date(rec.examDate))
                                     val pc = if (rec.score >= 60) CorrectGreen else WrongRed
                                     var showDelExam by remember { mutableStateOf(false) }
-                                    Surface(modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp), shape = RoundedCornerShape(10.dp), color = SurfaceVariant.copy(alpha = 0.5f)) {
+                                    Surface(
+                                        onClick = { onExamRecordClick(rec.bankId, rec.score, rec.totalCount, rec.correctCount, rec.id) },
+                                        modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp), shape = RoundedCornerShape(10.dp), color = SurfaceVariant.copy(alpha = 0.5f)
+                                    ) {
                                         Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                                             Column(Modifier.weight(1f)) { Text(name, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium); Text(date, style = MaterialTheme.typography.bodySmall, color = TextSecondary) }
                                             Column(horizontalAlignment = Alignment.End) { Text("${rec.score}分", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = pc); Text("${rec.correctCount}/${rec.totalCount}", style = MaterialTheme.typography.bodySmall, color = TextSecondary) }
@@ -284,7 +288,7 @@ fun ProfileScreen(
                                 Text("关于", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                             }
                             Spacer(Modifier.height(10.dp))
-                            Text("刷题助手 v1.5", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                            Text("刷题助手 v1.6", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
                             Text("支持导入 txt/md/docx/xlsx/json 题库\n顺序练习 · 随机刷题 · 题型分类 · 错题重做\n模拟考试 · 收藏 · 搜索 · 标记 · 笔记 · 计时", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
                             Spacer(Modifier.height(10.dp)); HorizontalDivider(color = BorderLight)
                             Spacer(Modifier.height(10.dp))

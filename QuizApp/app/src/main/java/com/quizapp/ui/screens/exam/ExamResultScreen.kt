@@ -13,11 +13,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.quizapp.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ExamResultScreen(score: Int, total: Int, correct: Int, onBack: () -> Unit) {
+fun ExamResultScreen(score: Int, total: Int, correct: Int, bankId: Long, examRecordId: Long, onBack: () -> Unit, onReviewWrong: () -> Unit) {
     val passed = score >= 60
     val wrong = total - correct
     val accuracy = if (total > 0) (correct * 100) / total else 0
@@ -71,6 +72,20 @@ fun ExamResultScreen(score: Int, total: Int, correct: Int, onBack: () -> Unit) {
             }
 
             Spacer(Modifier.height(28.dp))
+            // Review wrong questions button (only when there are wrong answers)
+            if (wrong > 0) {
+                Button(
+                    onClick = onReviewWrong,
+                    modifier = Modifier.fillMaxWidth().height(50.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = WarningOrange)
+                ) {
+                    Icon(Icons.Default.AutoFixHigh, null, Modifier.size(20.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("回顾错题 ($wrong 题)", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                }
+                Spacer(Modifier.height(12.dp))
+            }
             Button(onClick = onBack, modifier = Modifier.fillMaxWidth().height(50.dp), shape = RoundedCornerShape(12.dp), colors = ButtonDefaults.buttonColors(containerColor = Primary)) {
                 Icon(Icons.Default.ArrowBack, null, Modifier.size(20.dp)); Spacer(Modifier.width(8.dp)); Text("返回题库", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             }
