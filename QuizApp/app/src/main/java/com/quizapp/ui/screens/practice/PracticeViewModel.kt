@@ -19,7 +19,10 @@ data class PracticeUiState(
     val wrongQuestionCount: Int = 0,
     val answeredQuestionCount: Int = 0,
     val sequentialProgress: PracticeProgressEntity? = null,
-    val typeProgress: List<PracticeProgressEntity> = emptyList()
+    val typeProgress: List<PracticeProgressEntity> = emptyList(),
+    val dueReviewCount: Int = 0,
+    val favoriteCount: Int = 0,
+    val markedCount: Int = 0
 )
 
 @HiltViewModel
@@ -43,13 +46,27 @@ class PracticeViewModel @Inject constructor(
             val seqProgress = allProgress.find { it.mode == "sequential" }
             val typeProg = allProgress.filter { it.mode.startsWith("type_") }
 
+            // Load due review count for this bank
+            val dueReviewCount = quizRepository.getDueReviewCountByBank(bankId, System.currentTimeMillis())
+
+            // Load favorite and marked counts
+            val favCount = quizRepository.getAllFavoriteIds().count { fid ->
+                quizRepository.getQuestionById(fid)?.bankId == bankId
+            }
+            val mkdCount = quizRepository.getAllMarkedIds().count { mid ->
+                quizRepository.getQuestionById(mid)?.bankId == bankId
+            }
+
             _uiState.value = PracticeUiState(
                 bank = bank,
                 questionCount = questionCount,
                 wrongQuestionCount = wrongCount,
                 answeredQuestionCount = answeredCount,
                 sequentialProgress = seqProgress,
-                typeProgress = typeProg
+                typeProgress = typeProg,
+                dueReviewCount = dueReviewCount,
+                favoriteCount = favCount,
+                markedCount = mkdCount
             )
         }
     }

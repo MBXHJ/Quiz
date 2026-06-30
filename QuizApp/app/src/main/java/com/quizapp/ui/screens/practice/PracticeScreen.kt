@@ -2,8 +2,7 @@ package com.quizapp.ui.screens.practice
 
 import androidx.compose.animation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -32,6 +31,7 @@ fun PracticeScreen(
     onStartPractice: (mode: String) -> Unit,
     onStartRandom: (count: Int) -> Unit,
     onStartExam: () -> Unit,
+    onTagManage: () -> Unit = {},
     viewModel: PracticeViewModel = hiltViewModel()
 ) {
     LaunchedEffect(bankId) { viewModel.loadBank(bankId) }
@@ -39,6 +39,12 @@ fun PracticeScreen(
     var showTypeDlg by remember { mutableStateOf(false) }
     var showRandomDlg by remember { mutableStateOf(false) }
     var randomCount by remember { mutableStateOf(100) }
+    var searchQuery by remember { mutableStateOf("") }
+
+    // Clamp random count when question count changes
+    LaunchedEffect(s.questionCount) {
+        if (s.questionCount > 0) randomCount = randomCount.coerceIn(10, s.questionCount)
+    }
 
     Scaffold(
         topBar = {
@@ -48,50 +54,50 @@ fun PracticeScreen(
             )
         }
     ) { padding ->
-        Column(Modifier.fillMaxSize().padding(padding)) {
+        LazyColumn(
+            Modifier.fillMaxSize().padding(padding),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
             // ═══ Gradient Header with stats ═══
-            GradientHeader(modifier = Modifier.padding(horizontal = 0.dp)) {
-                Column(Modifier.fillMaxWidth().padding(28.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(s.bank?.name ?: "", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = Color.White)
-                    Spacer(Modifier.height(20.dp))
-                    Row(Modifier.fillMaxWidth()) {
-                        Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                            StatBadge(Icons.Default.MenuBook, "${s.questionCount}", "总题数")
-                        }
-                        Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                            StatBadge(Icons.Default.CheckCircle, "${s.answeredQuestionCount}", "已完成", Color(0xFFA7F3D0), onClick = { onStartPractice("sequential") })
-                        }
-                        Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                            StatBadge(Icons.Default.ErrorOutline, "${s.wrongQuestionCount}", "错题", Color(0xFFFFCDD2), onClick = { onStartPractice("wrong") })
-                        }
-                    }
-                    if (s.questionCount > 0) {
-                        Spacer(Modifier.height(16.dp))
-                        val pct = s.answeredQuestionCount.toFloat() / s.questionCount
-                        Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                            Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween) {
-                                Text("学习进度", style = MaterialTheme.typography.labelMedium, color = Color.White.copy(alpha = 0.8f))
-                                Text("${(pct * 100).toInt()}%", style = MaterialTheme.typography.labelMedium, color = Color.White, fontWeight = FontWeight.Bold)
+            item {
+                GradientHeader(modifier = Modifier.padding(horizontal = 0.dp)) {
+                    Column(Modifier.fillMaxWidth().padding(28.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(s.bank?.name ?: "", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = Color.White)
+                        Spacer(Modifier.height(20.dp))
+                        Row(Modifier.fillMaxWidth()) {
+                            Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                                StatBadge(Icons.Default.MenuBook, "${s.questionCount}", "总题数")
                             }
-                            Spacer(Modifier.height(6.dp))
-                            LinearProgressIndicator(progress = { pct }, modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)), color = Color(0xFFA7F3D0), trackColor = Color.White.copy(alpha = 0.22f))
+                            Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                                StatBadge(Icons.Default.CheckCircle, "${s.answeredQuestionCount}", "已完成", Color(0xFFA7F3D0), onClick = { onStartPractice("sequential") })
+                            }
+                            Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                                StatBadge(Icons.Default.ErrorOutline, "${s.wrongQuestionCount}", "错题", Color(0xFFFFCDD2), onClick = { onStartPractice("wrong") })
+                            }
+                        }
+                        if (s.questionCount > 0) {
+                            Spacer(Modifier.height(16.dp))
+                            val pct = s.answeredQuestionCount.toFloat() / s.questionCount
+                            Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                                Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween) {
+                                    Text("学习进度", style = MaterialTheme.typography.labelMedium, color = Color.White.copy(alpha = 0.8f))
+                                    Text("${(pct * 100).toInt()}%", style = MaterialTheme.typography.labelMedium, color = Color.White, fontWeight = FontWeight.Bold)
+                                }
+                                Spacer(Modifier.height(6.dp))
+                                LinearProgressIndicator(progress = { pct }, modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)), color = Color(0xFFA7F3D0), trackColor = Color.White.copy(alpha = 0.22f))
+                            }
                         }
                     }
                 }
             }
 
-            Spacer(Modifier.height(22.dp))
-
-            // ═══ Mode cards (scrollable) ═══
-            Column(
-                Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)
-            ) {
-                // ═══ Search field ═══
-                var searchQuery by remember { mutableStateOf("") }
+            // ═══ Search field ═══
+            item {
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+                    modifier = Modifier.fillMaxWidth(),
                     placeholder = { Text("搜索题目内容...") },
                     leadingIcon = { Icon(Icons.Default.Search, "搜索") },
                     trailingIcon = {
@@ -116,17 +122,45 @@ fun PracticeScreen(
                         unfocusedBorderColor = Border
                     )
                 )
+            }
 
+            // ═══ Section title ═══
+            item {
                 Text("选择刷题模式", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Spacer(Modifier.height(10.dp))
+            }
 
-                // Sequential mode with resume support
-                val seqProg = s.sequentialProgress
-                if (seqProg != null && seqProg.answeredCount > 0 && seqProg.currentIndex < seqProg.totalQuestions) {
-                    // Show resume card
+            // ═══ 今日复习 card ═══
+            if (s.dueReviewCount > 0) {
+                item {
+                    Card(
+                        onClick = { onStartPractice("review") },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(14.dp),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFF6366F1).copy(alpha = 0.06f))
+                    ) {
+                        Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Surface(shape = RoundedCornerShape(12.dp), color = Color(0xFF6366F1).copy(alpha = 0.15f), modifier = Modifier.size(48.dp)) {
+                                Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.AutoAwesome, null, tint = Color(0xFF6366F1), modifier = Modifier.size(24.dp)) }
+                            }
+                            Spacer(Modifier.width(14.dp))
+                            Column(Modifier.weight(1f)) {
+                                Text("今日复习", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = Color(0xFF6366F1))
+                                Text("${s.dueReviewCount} 道题目等待复习，艾宾浩斯记忆法", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+                            }
+                            Icon(Icons.Default.KeyboardArrowRight, null, tint = Color(0xFF6366F1), modifier = Modifier.size(20.dp))
+                        }
+                    }
+                }
+            }
+
+            // Sequential mode with resume support
+            val seqProg = s.sequentialProgress
+            if (seqProg != null && seqProg.answeredCount > 0 && seqProg.currentIndex < seqProg.totalQuestions) {
+                item {
                     Card(
                         onClick = { onStartPractice("sequential") },
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 5.dp),
+                        modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(14.dp),
                         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
                         colors = CardDefaults.cardColors(containerColor = WarningOrange.copy(alpha = 0.06f))
@@ -143,22 +177,20 @@ fun PracticeScreen(
                             Icon(Icons.Default.KeyboardArrowRight, null, tint = WarningOrange, modifier = Modifier.size(20.dp))
                         }
                     }
-                    // Show restart option
-                    ModeCard(Icons.Default.Refresh, "重新开始练习", "清除当前进度，从头开始", Color(0xFF64748B)) {
-                        onStartPractice("restart_sequential")
-                    }
-                } else {
-                    ModeCard(Icons.Default.ListAlt, "顺序练习", "按顺序逐题练习，查看答案与解析", Color(0xFF2563EB)) { onStartPractice("sequential") }
                 }
+                item { ModeCard(Icons.Default.Refresh, "重新开始练习", "清除当前进度，从头开始", Color(0xFF64748B)) { onStartPractice("restart_sequential") } }
+            } else {
+                item { ModeCard(Icons.Default.ListAlt, "顺序练习", "按顺序逐题练习，查看答案与解析", Color(0xFF2563EB)) { onStartPractice("sequential") } }
+            }
 
-                ModeCard(Icons.Default.Assignment, "模拟考试", "按比例随机抽题，模拟真实考场", CorrectGreen) { onStartExam() }
-                ModeCard(Icons.Default.Shuffle, "随机刷题", "随机抽取题目，灵活练习", Color(0xFF8B5CF6)) { showRandomDlg = true }
-                ModeCard(Icons.Default.Category, "题型分类", "按单选、多选、判断题分类刷题", WarningOrange) { showTypeDlg = true }
-                ModeCard(Icons.Default.StarBorder, "收藏题目", "查看收藏的题目", Color(0xFFFFC107)) { onStartPractice("favorite") }
-                ModeCard(Icons.Default.OutlinedFlag, "标记题目", "查看标记的题目", Color(0xFFFF9800)) { onStartPractice("marked") }
-                AnimatedVisibility(s.wrongQuestionCount > 0, enter = fadeIn() + expandVertically(), exit = fadeOut() + shrinkVertically()) {
-                    ModeCard(Icons.Default.AutoFixHigh, "错题重做", "共 ${s.wrongQuestionCount} 道错题，针对性巩固提分", WrongRed) { onStartPractice("wrong") }
-                }
+            item { ModeCard(Icons.Default.Assignment, "模拟考试", "按比例随机抽题，模拟真实考场", CorrectGreen) { onStartExam() } }
+            item { ModeCard(Icons.Default.Shuffle, "随机刷题", "随机抽取题目，灵活练习", Color(0xFF8B5CF6)) { showRandomDlg = true } }
+            item { ModeCard(Icons.Default.Category, "题型分类", "按单选、多选、判断题分类刷题", WarningOrange) { showTypeDlg = true } }
+            item { ModeCard(Icons.Default.StarBorder, "收藏题目", "查看收藏的题目", Color(0xFFFFC107)) { onStartPractice("favorite") } }
+            item { ModeCard(Icons.Default.OutlinedFlag, "标记题目", "查看标记的题目", Color(0xFFFF9800)) { onStartPractice("marked") } }
+            item { ModeCard(Icons.Default.Label, "标签筛选", "按自定义标签筛选题目练习", Color(0xFF8B5CF6)) { onTagManage() } }
+            if (s.wrongQuestionCount > 0) {
+                item { ModeCard(Icons.Default.AutoFixHigh, "错题重做", "共 ${s.wrongQuestionCount} 道错题，针对性巩固提分", WrongRed) { onStartPractice("wrong") } }
             }
         }
     }

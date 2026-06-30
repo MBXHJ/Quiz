@@ -1,9 +1,8 @@
 package com.quizapp.ui.screens.settings
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
@@ -34,7 +33,10 @@ data class SettingsUiState(
     val fontScale: Float = 1.0f,
     val reminderEnabled: Boolean = false,
     val reminderHour: Int = 20,
-    val reminderMinute: Int = 0
+    val reminderMinute: Int = 0,
+    val dailyGoalTarget: Int = 50,
+    val ttsEnabled: Boolean = false,
+    val ttsAutoPlay: Boolean = false
 )
 
 @HiltViewModel
@@ -50,6 +52,9 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch { settingsManager.reminderEnabledFlow.collect { _uiState.value = _uiState.value.copy(reminderEnabled = it) } }
         viewModelScope.launch { settingsManager.reminderHourFlow.collect { h -> _uiState.value = _uiState.value.copy(reminderHour = h) } }
         viewModelScope.launch { settingsManager.reminderMinuteFlow.collect { m -> _uiState.value = _uiState.value.copy(reminderMinute = m) } }
+        viewModelScope.launch { settingsManager.dailyGoalTargetFlow.collect { _uiState.value = _uiState.value.copy(dailyGoalTarget = it) } }
+        viewModelScope.launch { settingsManager.ttsEnabledFlow.collect { _uiState.value = _uiState.value.copy(ttsEnabled = it) } }
+        viewModelScope.launch { settingsManager.ttsAutoPlayFlow.collect { _uiState.value = _uiState.value.copy(ttsAutoPlay = it) } }
     }
 
     fun setDarkMode(mode: Int) = viewModelScope.launch { settingsManager.setDarkMode(mode) }
@@ -58,6 +63,9 @@ class SettingsViewModel @Inject constructor(
         settingsManager.setReminderEnabled(enabled)
         settingsManager.setReminderTime(hour, minute)
     }
+    fun setDailyGoalTarget(target: Int) = viewModelScope.launch { settingsManager.setDailyGoalTarget(target) }
+    fun setTtsEnabled(enabled: Boolean) = viewModelScope.launch { settingsManager.setTtsEnabled(enabled) }
+    fun setTtsAutoPlay(enabled: Boolean) = viewModelScope.launch { settingsManager.setTtsAutoPlay(enabled) }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -74,8 +82,13 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltViewMo
             )
         }
     ) { padding ->
-        Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp)) {
+        LazyColumn(
+            Modifier.fillMaxSize().padding(padding),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
             // Dark Mode
+            item {
             Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)) {
                 Column(Modifier.padding(16.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -95,9 +108,10 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltViewMo
                     }
                 }
             }
-            Spacer(Modifier.height(14.dp))
+            }
 
             // Font Size
+            item {
             Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)) {
                 Column(Modifier.padding(16.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -116,9 +130,70 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltViewMo
                     Text("${(s.fontScale * 100).toInt()}%", style = MaterialTheme.typography.bodySmall, color = TextSecondary, modifier = Modifier.align(Alignment.CenterHorizontally))
                 }
             }
-            Spacer(Modifier.height(14.dp))
+            }
+
+            // Daily Goal Target
+            item {
+            Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)) {
+                Column(Modifier.padding(16.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Surface(shape = RoundedCornerShape(10.dp), color = Color(0xFF10B981).copy(alpha = 0.1f), modifier = Modifier.size(34.dp)) {
+                            Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.TrackChanges, null, Modifier.size(20.dp), tint = Color(0xFF10B981)) }
+                        }
+                        Spacer(Modifier.width(10.dp))
+                        Text("每日目标", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    }
+                    Spacer(Modifier.height(12.dp))
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Text("每天刷题目标", style = MaterialTheme.typography.bodyMedium)
+                        Spacer(Modifier.weight(1f))
+                        IconButton(onClick = { if (s.dailyGoalTarget > 10) viewModel.setDailyGoalTarget(s.dailyGoalTarget - 10) }) {
+                            Icon(Icons.Default.Remove, "减少")
+                        }
+                        Surface(shape = RoundedCornerShape(10.dp), color = PrimaryContainer) {
+                            Text(
+                                "${s.dailyGoalTarget} 题",
+                                Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = Primary
+                            )
+                        }
+                        IconButton(onClick = { if (s.dailyGoalTarget < 500) viewModel.setDailyGoalTarget(s.dailyGoalTarget + 10) }) {
+                            Icon(Icons.Default.Add, "增加")
+                        }
+                    }
+                }
+            }
+            }
+
+            // TTS Settings
+            item {
+            Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)) {
+                Column(Modifier.padding(16.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Surface(shape = RoundedCornerShape(10.dp), color = Color(0xFF8B5CF6).copy(alpha = 0.1f), modifier = Modifier.size(34.dp)) {
+                            Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.VolumeUp, null, Modifier.size(20.dp), tint = Color(0xFF8B5CF6)) }
+                        }
+                        Spacer(Modifier.width(10.dp))
+                        Text("语音朗读", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Spacer(Modifier.weight(1f))
+                        Switch(checked = s.ttsEnabled, onCheckedChange = { viewModel.setTtsEnabled(it) })
+                    }
+                    if (s.ttsEnabled) {
+                        Spacer(Modifier.height(8.dp))
+                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                            Text("自动朗读下一题", style = MaterialTheme.typography.bodyMedium)
+                            Spacer(Modifier.weight(1f))
+                            Switch(checked = s.ttsAutoPlay, onCheckedChange = { viewModel.setTtsAutoPlay(it) })
+                        }
+                    }
+                }
+            }
+            }
 
             // Reminder
+            item {
             Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)) {
                 Column(Modifier.padding(16.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -148,6 +223,7 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltViewMo
                         }
                     }
                 }
+            }
             }
         }
     }

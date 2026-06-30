@@ -32,6 +32,7 @@ fun BankListScreen(
     viewModel: BankListViewModel = hiltViewModel()
 ) {
     val banks by viewModel.banks.collectAsState()
+    val homeState by viewModel.homeState.collectAsState()
 
     Scaffold(
         topBar = {
@@ -79,6 +80,77 @@ fun BankListScreen(
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
+                // ═══ Daily progress card ═══
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = if (homeState.todayTargetMet)
+                                Color(0xFF10B981).copy(alpha = 0.06f)
+                            else
+                                PrimaryContainer
+                        )
+                    ) {
+                        Column(Modifier.padding(20.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    if (homeState.todayTargetMet) Icons.Default.EmojiEvents else Icons.Default.Whatshot,
+                                    null,
+                                    tint = if (homeState.todayTargetMet) Color(0xFF10B981) else Primary,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                                Spacer(Modifier.width(8.dp))
+                                Text("今日进度", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                Spacer(Modifier.weight(1f))
+                                if (homeState.currentStreak > 0) {
+                                    Surface(
+                                        shape = RoundedCornerShape(8.dp),
+                                        color = WarningOrange.copy(alpha = 0.12f)
+                                    ) {
+                                        Row(
+                                            Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Icon(Icons.Default.LocalFireDepartment, null, tint = WarningOrange, modifier = Modifier.size(14.dp))
+                                            Spacer(Modifier.width(4.dp))
+                                            Text(
+                                                "连续 ${homeState.currentStreak} 天",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = WarningOrange,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                            Spacer(Modifier.height(14.dp))
+                            LinearProgressIndicator(
+                                progress = { homeState.todayProgress },
+                                modifier = Modifier.fillMaxWidth().height(10.dp).clip(RoundedCornerShape(5.dp)),
+                                color = if (homeState.todayTargetMet) Color(0xFF10B981) else Primary,
+                                trackColor = if (homeState.todayTargetMet) Color(0xFF10B981).copy(alpha = 0.1f) else Primary.copy(alpha = 0.1f)
+                            )
+                            Spacer(Modifier.height(10.dp))
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text(
+                                    "${homeState.todayAnswered}/${homeState.dailyGoalTarget} 题",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                Text(
+                                    if (homeState.todayTargetMet) "🎉 目标达成！"
+                                    else if (homeState.todayAnswered > 0) "还差 ${homeState.dailyGoalTarget - homeState.todayAnswered} 题"
+                                    else "今天还没开始刷题",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = TextSecondary
+                                )
+                            }
+                        }
+                    }
+                }
+
                 item {
                     Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween, Alignment.Bottom) {
                         Column {

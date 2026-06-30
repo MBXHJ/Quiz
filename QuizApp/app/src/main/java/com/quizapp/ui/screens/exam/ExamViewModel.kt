@@ -110,14 +110,23 @@ class ExamViewModel @Inject constructor(
     fun previousQuestion() { _uiState.value.let { s -> if (s.currentIndex > 0) _uiState.value = s.copy(currentIndex = s.currentIndex - 1) } }
 
     fun finishExam(onResult: (score: Int, total: Int, correct: Int, examRecordId: Long) -> Unit) {
-        val s = _uiState.value; var correct = 0
+        val s = _uiState.value
+        if (s.questions.isEmpty()) {
+            onResult(0, 0, 0, -1L)
+            return
+        }
+
+        var correct = 0
         val wrongQuestionIds = mutableListOf<Long>()
-        s.questions.forEach { q ->
-            val ua = if (q.questionType == "MULTI") (s.multiSelections[q.id]?.sorted()?.joinToString("") ?: "") else s.answers[q.id] ?: ""
-            val isCorrect = normalizeAnswer(ua, q.questionType) == normalizeAnswer(q.answer, q.questionType)
-            if (isCorrect) correct++ else wrongQuestionIds.add(q.id)
-            if (ua.isNotBlank()) {
-                viewModelScope.launch {
+
+        // Batch all DB operations into a single coroutine to avoid race conditions
+        viewModelScope.launch {
+            for (q in s.questions) {
+                val ua = if (q.questionType == "MULTI") (s.multiSelections[q.id]?.sorted()?.joinToString("") ?: "") else s.answers[q.id] ?: ""
+                val isCorrect = normalizeAnswer(ua, q.questionType) == normalizeAnswer(q.answer, q.questionType)
+                if (isCorrect) correct++ else wrongQuestionIds.add(q.id)
+
+                if (ua.isNotBlank()) {
                     quizRepository.markQuestionAnswered(q.id, q.bankId)
                     if (!isCorrect) {
                         val existingCount = quizRepository.getWrongCount(q.id)
@@ -129,18 +138,17 @@ class ExamViewModel @Inject constructor(
                                 isRemoved = false
                             )
                         )
+                        quizRepository.scheduleReview(q.id)
                     }
                 }
             }
-        }
-        val score = if (s.questions.isNotEmpty()) (correct * 100) / s.questions.size else 0
-        val wrongIdsJson = wrongQuestionIds.joinToString(",")
 
-        // Save exam record first, then call onResult with the record ID
-        viewModelScope.launch {
+            val score = if (s.questions.isNotEmpty()) (correct * 100) / s.questions.size else 0
+            val wrongIdsJson = wrongQuestionIds.joinToString(",")
+
             val recordId = quizRepository.insertRecord(
                 ExamRecordEntity(
-                    bankId = s.questions.firstOrNull()?.bankId ?: 0,
+                    bankId = s.questions.first().bankId,
                     score = score,
                     totalCount = s.questions.size,
                     correctCount = correct,
@@ -148,6 +156,9 @@ class ExamViewModel @Inject constructor(
                     examDate = System.currentTimeMillis()
                 )
             )
+            // Update daily stats
+            val todayDate = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date())
+            quizRepository.incrementDailyAnswered(todayDate, 0L)
             onResult(score, s.questions.size, correct, recordId)
         }
     }

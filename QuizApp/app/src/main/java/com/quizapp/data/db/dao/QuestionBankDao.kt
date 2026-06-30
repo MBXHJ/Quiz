@@ -36,6 +36,9 @@ interface QuestionBankDao {
     @Query("UPDATE question_banks SET questionCount = :count WHERE id = :bankId")
     suspend fun updateQuestionCount(bankId: Long, count: Int)
 
+    @Query("SELECT * FROM question_banks ORDER BY importDate DESC")
+    suspend fun getAllBanksOnce(): List<QuestionBankEntity>
+
     @Query("SELECT COUNT(*) FROM question_banks")
     suspend fun getBankCount(): Int
 }

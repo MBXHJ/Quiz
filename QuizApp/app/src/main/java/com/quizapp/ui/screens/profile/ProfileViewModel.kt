@@ -5,9 +5,12 @@ import android.content.Intent
 import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.quizapp.data.SettingsManager
+import com.quizapp.data.db.entity.DailyStatsEntity
 import com.quizapp.data.db.entity.ExamRecordEntity
 import com.quizapp.data.db.entity.PracticeRecordEntity
 import com.quizapp.data.repository.QuizRepository
+import com.quizapp.data.repository.QuizRepository.BankAccuracySummary
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,6 +18,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 import javax.inject.Inject
 
 data class ProfileUiState(
@@ -28,15 +35,26 @@ data class ProfileUiState(
     val bankNames: Map<Long, String> = emptyMap(),
     val isLoading: Boolean = true,
     // Learning report
-    val totalPracticeTime: Long = 0L,    // in milliseconds
+    val totalPracticeTime: Long = 0L,
     val totalPracticeAnswered: Int = 0,
-    val avgPracticeAccuracy: Int = 0,    // percentage
-    val bestPracticeAccuracy: Int = 0    // percentage
+    val avgPracticeAccuracy: Int = 0,
+    val bestPracticeAccuracy: Int = 0,
+    // Calendar heatmap
+    val calendarStats: List<DailyStatsEntity> = emptyList(),
+    val dailyGoalTarget: Int = 50,
+    val currentStreak: Int = 0,
+    // Charts
+    val accuracyTrend: List<Pair<String, Float>> = emptyList(),
+    val dailyVolume: List<Pair<String, Int>> = emptyList(),
+    val chartDays: Int = 7,
+    // Weak areas
+    val weakAreas: List<BankAccuracySummary> = emptyList()
 )
 
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
     private val quizRepository: QuizRepository,
+    private val settingsManager: SettingsManager,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
@@ -89,6 +107,24 @@ class ProfileViewModel @Inject constructor(
             }
             val avgAccuracy = if (totalPracticeAnswered > 0) (totalPracticeCorrect * 100) / totalPracticeAnswered else 0
 
+            // Load calendar heatmap data
+            val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+            val cal = Calendar.getInstance()
+            cal.time = Date()
+            cal.add(Calendar.DAY_OF_YEAR, -90)
+            val startDate = sdf.format(cal.time)
+            val endDate = sdf.format(Date())
+            val calendarStats = quizRepository.getStatsForDateRange(startDate, endDate)
+            val goalTarget = settingsManager.dailyGoalTargetFlow.first()
+            val streak = quizRepository.calculateStreak(goalTarget)
+
+            // Load chart data
+            val accuracyTrend = quizRepository.getDailyAccuracy(7)
+            val dailyVolume = quizRepository.getDailyVolume(7)
+
+            // Load weak areas
+            val weakAreas = quizRepository.getWeakBanks(60f)
+
             _uiState.value = ProfileUiState(
                 totalBanks = banks.size,
                 totalQuestions = totalQuestions,
@@ -102,7 +138,13 @@ class ProfileViewModel @Inject constructor(
                 totalPracticeTime = totalPracticeTime,
                 totalPracticeAnswered = totalPracticeAnswered,
                 avgPracticeAccuracy = avgAccuracy,
-                bestPracticeAccuracy = bestAccuracy
+                bestPracticeAccuracy = bestAccuracy,
+                calendarStats = calendarStats,
+                dailyGoalTarget = goalTarget,
+                currentStreak = streak,
+                accuracyTrend = accuracyTrend,
+                dailyVolume = dailyVolume,
+                weakAreas = weakAreas
             )
         }
     }
@@ -118,6 +160,15 @@ class ProfileViewModel @Inject constructor(
         viewModelScope.launch {
             quizRepository.deleteExamRecordById(id)
             loadStats() // reload
+        }
+    }
+
+    fun setChartDays(days: Int) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(chartDays = days)
+            val accuracyTrend = quizRepository.getDailyAccuracy(days)
+            val dailyVolume = quizRepository.getDailyVolume(days)
+            _uiState.value = _uiState.value.copy(accuracyTrend = accuracyTrend, dailyVolume = dailyVolume)
         }
     }
 

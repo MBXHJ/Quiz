@@ -43,6 +43,12 @@ fun QuestionScreen(
 ) {
     LaunchedEffect(bankId, mode, restart) { viewModel.loadQuestions(bankId, mode, restart, recordId, count) }
     val s by viewModel.uiState.collectAsState()
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val ttsHelper = remember { com.quizapp.data.TtsHelper(context) }
+
+    DisposableEffect(Unit) {
+        onDispose { ttsHelper.shutdown() }
+    }
 
     val modeTitle = when {
         mode.startsWith("record_wrong_") -> "错题重做"
@@ -50,20 +56,23 @@ fun QuestionScreen(
         mode == "sequential" -> "顺序练习"
         mode == "random" -> "随机刷题"
         mode == "wrong" -> "错题重做"
+        mode == "review" -> "艾宾浩斯复习"
         mode.startsWith("type_") -> "题型练习"
         else -> "刷题"
     }
 
+    var showOverflowMenu by remember { mutableStateOf(false) }
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(modeTitle, fontWeight = FontWeight.Bold) },
+                title = { Text(modeTitle, fontWeight = FontWeight.Bold, maxLines = 1) },
                 navigationIcon = { IconButton(onClick = {
                     viewModel.finishPractice(onFinished = onBack)
                 }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "返回") } },
                 actions = {
-                    // Favorite toggle
                     if (s.questions.isNotEmpty()) {
+                        // Favorite
                         IconButton(onClick = { viewModel.toggleFavorite() }) {
                             Icon(
                                 if (s.isFavorite) Icons.Default.Star else Icons.Default.StarBorder,
@@ -71,31 +80,61 @@ fun QuestionScreen(
                                 tint = if (s.isFavorite) Color(0xFFFFC107) else LocalContentColor.current
                             )
                         }
-                    }
-                    // Mark toggle
-                    if (s.questions.isNotEmpty()) {
-                        IconButton(onClick = { viewModel.toggleMark() }) {
+                        // TTS
+                        IconButton(onClick = {
+                            if (s.isSpeaking) viewModel.stopSpeaking(ttsHelper)
+                            else viewModel.speakCurrentQuestion(ttsHelper)
+                        }) {
                             Icon(
-                                if (s.isMarked) Icons.Default.Flag else Icons.Default.OutlinedFlag,
-                                "标记",
-                                tint = if (s.isMarked) Color(0xFFFF9800) else LocalContentColor.current
+                                if (s.isSpeaking) Icons.Default.VolumeUp else Icons.Default.VolumeUp,
+                                "朗读",
+                                tint = if (s.isSpeaking) Primary else LocalContentColor.current
                             )
                         }
-                    }
-                    // Note button
-                    if (s.questions.isNotEmpty()) {
-                        IconButton(onClick = { viewModel.toggleNoteDialog() }) {
-                            Icon(
-                                Icons.Default.EditNote,
-                                "笔记",
-                                tint = if (s.noteText.isNotBlank()) Color(0xFF10B981) else LocalContentColor.current
-                            )
-                        }
-                    }
-                    // Question navigator button
-                    if (s.questions.isNotEmpty()) {
-                        IconButton(onClick = { viewModel.toggleJumpDialog() }) {
-                            Icon(Icons.Default.GridView, "题目列表")
+                        // Overflow menu
+                        Box {
+                            IconButton(onClick = { showOverflowMenu = true }) {
+                                Icon(Icons.Default.MoreVert, "更多")
+                            }
+                            DropdownMenu(
+                                expanded = showOverflowMenu,
+                                onDismissRequest = { showOverflowMenu = false }
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text(if (s.isMarked) "取消标记" else "标记题目") },
+                                    onClick = { viewModel.toggleMark(); showOverflowMenu = false },
+                                    leadingIcon = {
+                                        Icon(
+                                            if (s.isMarked) Icons.Default.Flag else Icons.Default.OutlinedFlag,
+                                            null,
+                                            tint = if (s.isMarked) Color(0xFFFF9800) else LocalContentColor.current
+                                        )
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("笔记") },
+                                    onClick = { viewModel.toggleNoteDialog(); showOverflowMenu = false },
+                                    leadingIcon = {
+                                        Icon(Icons.Default.EditNote, null,
+                                            tint = if (s.noteText.isNotBlank()) Color(0xFF10B981) else LocalContentColor.current
+                                        )
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("题目列表") },
+                                    onClick = { viewModel.toggleJumpDialog(); showOverflowMenu = false },
+                                    leadingIcon = { Icon(Icons.Default.GridView, null) }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("标签") },
+                                    onClick = { viewModel.toggleTagDialog(); showOverflowMenu = false },
+                                    leadingIcon = {
+                                        Icon(Icons.Default.Label, null,
+                                            tint = if (s.questionTagIds.isNotEmpty()) Color(0xFF8B5CF6) else LocalContentColor.current
+                                        )
+                                    }
+                                )
+                            }
                         }
                     }
                 }
@@ -338,6 +377,37 @@ fun QuestionScreen(
                 }
             },
             dismissButton = { TextButton(onClick = { viewModel.toggleNoteDialog() }) { Text("取消") } }
+        )
+    }
+
+    // ═══ Tag dialog ═══
+    if (s.showTagDialog) {
+        AlertDialog(
+            onDismissRequest = { viewModel.toggleTagDialog() },
+            shape = RoundedCornerShape(20.dp),
+            title = { Text("选择标签", fontWeight = FontWeight.Bold) },
+            text = {
+                Column {
+                    if (s.allTags.isEmpty()) {
+                        Text("暂无标签，请先在练习页的「标签筛选」中创建标签", style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
+                    } else {
+                        s.allTags.forEach { tag ->
+                            val isSelected = tag.id in s.questionTagIds
+                            FilterChip(
+                                selected = isSelected,
+                                onClick = { viewModel.toggleTagOnQuestion(tag.id) },
+                                label = { Text(tag.name) },
+                                modifier = Modifier.padding(vertical = 2.dp),
+                                leadingIcon = if (isSelected) {
+                                    { Icon(Icons.Default.Check, null, Modifier.size(18.dp)) }
+                                } else null
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = { TextButton(onClick = { viewModel.toggleTagDialog() }) { Text("完成") } },
+            dismissButton = {}
         )
     }
 }

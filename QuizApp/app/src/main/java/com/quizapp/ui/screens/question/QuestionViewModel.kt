@@ -40,7 +40,13 @@ data class QuestionUiState(
     val elapsedSeconds: Int = 0,
     val startTime: Long = 0L,
     val showNoteDialog: Boolean = false,
-    val noteText: String = ""
+    val noteText: String = "",
+    // Tags
+    val questionTagIds: Set<Long> = emptySet(),
+    val allTags: List<com.quizapp.data.db.entity.TagEntity> = emptyList(),
+    val showTagDialog: Boolean = false,
+    // TTS
+    val isSpeaking: Boolean = false
 )
 
 @HiltViewModel
@@ -102,6 +108,10 @@ class QuestionViewModel @Inject constructor(
                         val ids = record.questionDetails.split(",").mapNotNull { it.trim().toLongOrNull() }
                         quizRepository.getQuestionsByIdsOnce(ids)
                     } else emptyList()
+                }
+                mode == "review" -> {
+                    val dueQuestions = quizRepository.getDueReviewQuestionsByBank(bankId, System.currentTimeMillis())
+                    dueQuestions
                 }
                 mode == "favorite" -> {
                     val ids = quizRepository.getAllFavoriteIds()
@@ -333,7 +343,10 @@ class QuestionViewModel @Inject constructor(
      */
     fun finishPractice(onFinished: () -> Unit = {}) {
         val state = _uiState.value
-        if (state.isFinishing) return
+        if (state.isFinishing || state.questions.isEmpty()) {
+            onFinished()
+            return
+        }
         _uiState.value = state.copy(isFinishing = true)
 
         viewModelScope.launch {
@@ -343,6 +356,7 @@ class QuestionViewModel @Inject constructor(
                 state.mode == "sequential" -> "顺序练习"
                 state.mode == "random" -> "随机刷题"
                 state.mode == "wrong" -> "错题重做"
+                state.mode == "review" -> "艾宾浩斯复习"
                 state.mode == "favorite" -> "收藏练习"
                 state.mode == "marked" -> "标记练习"
                 state.mode.startsWith("search_") -> "搜索练习"
@@ -385,6 +399,13 @@ class QuestionViewModel @Inject constructor(
             // Stop the timer
             stopTimer()
 
+            // Update daily stats
+            try {
+                val todayDate = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date())
+                val elapsedMs = System.currentTimeMillis() - (if (state.startTime > 0L) state.startTime else System.currentTimeMillis())
+                quizRepository.incrementDailyAnswered(todayDate, elapsedMs)
+            } catch (_: Exception) { }
+
             _uiState.value = _uiState.value.copy(isFinishing = false)
             onFinished()
         }
@@ -401,12 +422,68 @@ class QuestionViewModel @Inject constructor(
         viewModelScope.launch {
             val isFav = quizRepository.isFavorite(questionId)
             val isMkd = quizRepository.isMarked(questionId)
-            _uiState.value = _uiState.value.copy(isFavorite = isFav, isMarked = isMkd)
+            val tagIds = quizRepository.getTagIdsForQuestion(questionId).toSet()
+            _uiState.value = _uiState.value.copy(isFavorite = isFav, isMarked = isMkd, questionTagIds = tagIds)
         }
     }
 
+    // ===== Tag methods =====
+
+    fun toggleTagDialog() {
+        viewModelScope.launch {
+            val tags = quizRepository.getAllTagsOnce()
+            _uiState.value = _uiState.value.copy(showTagDialog = !_uiState.value.showTagDialog, allTags = tags)
+        }
+    }
+
+    fun toggleTagOnQuestion(tagId: Long) {
+        viewModelScope.launch {
+            val question = _uiState.value.questions.getOrNull(_uiState.value.currentIndex) ?: return@launch
+            val currentIds = _uiState.value.questionTagIds
+            if (tagId in currentIds) {
+                quizRepository.removeTagFromQuestion(question.id, tagId)
+                _uiState.value = _uiState.value.copy(questionTagIds = currentIds - tagId)
+            } else {
+                quizRepository.addTagToQuestion(question.id, tagId)
+                _uiState.value = _uiState.value.copy(questionTagIds = currentIds + tagId)
+            }
+        }
+    }
+
+    // ===== TTS methods =====
+
+    fun speakCurrentQuestion(ttsHelper: com.quizapp.data.TtsHelper?) {
+        val question = _uiState.value.questions.getOrNull(_uiState.value.currentIndex) ?: return
+        val text = buildString {
+            append(question.content)
+            append("。")
+            question.options.split("|||").filter { it.isNotBlank() }.forEachIndexed { i, opt ->
+                val label = ('A' + i).toString()
+                append("$label. $opt。")
+            }
+        }
+        _uiState.value = _uiState.value.copy(isSpeaking = true)
+        ttsHelper?.speak(text) {
+            _uiState.value = _uiState.value.copy(isSpeaking = false)
+        }
+    }
+
+    fun stopSpeaking(ttsHelper: com.quizapp.data.TtsHelper?) {
+        ttsHelper?.stop()
+        _uiState.value = _uiState.value.copy(isSpeaking = false)
+    }
+
     private fun recordWrongIfNeeded(questionId: Long, isCorrect: Boolean) {
-        if (isCorrect) return
+        if (isCorrect) {
+            // Advance spaced repetition if in review mode
+            viewModelScope.launch {
+                val schedule = quizRepository.getScheduleForQuestion(questionId)
+                if (schedule != null) {
+                    quizRepository.advanceReview(questionId)
+                }
+            }
+            return
+        }
         viewModelScope.launch {
             val existingCount = quizRepository.getWrongCount(questionId)
             quizRepository.upsertWrongRecord(
@@ -418,6 +495,9 @@ class QuestionViewModel @Inject constructor(
                 )
             )
             _uiState.value = _uiState.value.copy(wrongCount = existingCount + 1)
+
+            // Schedule/reset spaced repetition
+            quizRepository.scheduleReview(questionId)
         }
     }
 

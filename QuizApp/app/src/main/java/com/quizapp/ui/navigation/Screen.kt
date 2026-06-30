@@ -20,4 +20,7 @@ sealed class Screen(val route: String) {
     }
     data object Profile : Screen("profile")
     data object Settings : Screen("settings")
+    data object TagManage : Screen("tag_manage/{bankId}") {
+        fun createRoute(bankId: Long) = "tag_manage/$bankId"
+    }
 }

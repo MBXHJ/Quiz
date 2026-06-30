@@ -14,6 +14,7 @@ import com.quizapp.ui.screens.practice.PracticeScreen
 import com.quizapp.ui.screens.profile.ProfileScreen
 import com.quizapp.ui.screens.question.QuestionScreen
 import com.quizapp.ui.screens.settings.SettingsScreen
+import com.quizapp.ui.screens.tags.TagManageScreen
 
 @Composable
 fun NavGraph(navController: NavHostController) {
@@ -64,6 +65,9 @@ fun NavGraph(navController: NavHostController) {
                 },
                 onStartExam = {
                     navController.navigate(Screen.Exam.createRoute(bankId))
+                },
+                onTagManage = {
+                    navController.navigate(Screen.TagManage.createRoute(bankId))
                 }
             )
         }
@@ -158,6 +162,17 @@ fun NavGraph(navController: NavHostController) {
 
         composable(Screen.Settings.route) {
             SettingsScreen(onBack = { navController.popBackStack() })
+        }
+
+        composable(
+            route = Screen.TagManage.route,
+            arguments = listOf(navArgument("bankId") { type = NavType.LongType })
+        ) { backStackEntry ->
+            val bankId = backStackEntry.arguments?.getLong("bankId") ?: return@composable
+            TagManageScreen(
+                bankId = bankId,
+                onBack = { navController.popBackStack() }
+            )
         }
     }
 }

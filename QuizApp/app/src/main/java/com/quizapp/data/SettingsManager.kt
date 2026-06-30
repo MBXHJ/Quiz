@@ -26,6 +26,9 @@ class SettingsManager @Inject constructor(
         val REMINDER_ENABLED = booleanPreferencesKey("reminder_enabled")
         val REMINDER_HOUR = intPreferencesKey("reminder_hour")
         val REMINDER_MINUTE = intPreferencesKey("reminder_minute")
+        val DAILY_GOAL_TARGET = intPreferencesKey("daily_goal_target") // default 50
+        val TTS_ENABLED = booleanPreferencesKey("tts_enabled")
+        val TTS_AUTO_PLAY = booleanPreferencesKey("tts_auto_play")
     }
 
     val darkModeFlow: Flow<Int> = context.dataStore.data.map { it[DARK_MODE] ?: 0 }
@@ -33,9 +36,15 @@ class SettingsManager @Inject constructor(
     val reminderEnabledFlow: Flow<Boolean> = context.dataStore.data.map { it[REMINDER_ENABLED] ?: false }
     val reminderHourFlow: Flow<Int> = context.dataStore.data.map { it[REMINDER_HOUR] ?: 20 }
     val reminderMinuteFlow: Flow<Int> = context.dataStore.data.map { it[REMINDER_MINUTE] ?: 0 }
+    val dailyGoalTargetFlow: Flow<Int> = context.dataStore.data.map { it[DAILY_GOAL_TARGET] ?: 50 }
+    val ttsEnabledFlow: Flow<Boolean> = context.dataStore.data.map { it[TTS_ENABLED] ?: false }
+    val ttsAutoPlayFlow: Flow<Boolean> = context.dataStore.data.map { it[TTS_AUTO_PLAY] ?: false }
 
     suspend fun setDarkMode(mode: Int) { context.dataStore.edit { it[DARK_MODE] = mode } }
     suspend fun setFontScale(scale: Float) { context.dataStore.edit { it[FONT_SCALE] = scale } }
     suspend fun setReminderEnabled(enabled: Boolean) { context.dataStore.edit { it[REMINDER_ENABLED] = enabled } }
     suspend fun setReminderTime(hour: Int, minute: Int) { context.dataStore.edit { it[REMINDER_HOUR] = hour; it[REMINDER_MINUTE] = minute } }
+    suspend fun setDailyGoalTarget(target: Int) { context.dataStore.edit { it[DAILY_GOAL_TARGET] = target } }
+    suspend fun setTtsEnabled(enabled: Boolean) { context.dataStore.edit { it[TTS_ENABLED] = enabled } }
+    suspend fun setTtsAutoPlay(enabled: Boolean) { context.dataStore.edit { it[TTS_AUTO_PLAY] = enabled } }
 }

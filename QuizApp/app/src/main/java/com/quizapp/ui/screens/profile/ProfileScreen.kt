@@ -16,6 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.quizapp.ui.theme.*
+import com.quizapp.ui.components.CalendarHeatmap
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -111,6 +112,83 @@ fun ProfileScreen(
                     }
                 }
 
+                // ═══ 打卡日历 ═══
+                item {
+                    Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)) {
+                        Column(Modifier.padding(16.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Surface(modifier = Modifier.size(34.dp), shape = RoundedCornerShape(10.dp), color = Color(0xFF6366F1).copy(alpha = 0.1f)) {
+                                    Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.CalendarMonth, null, Modifier.size(20.dp), tint = Color(0xFF6366F1)) }
+                                }
+                                Spacer(Modifier.width(10.dp))
+                                Text("打卡日历", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                Spacer(Modifier.weight(1f))
+                                if (s.currentStreak > 0) {
+                                    Surface(shape = RoundedCornerShape(8.dp), color = WarningOrange.copy(alpha = 0.12f)) {
+                                        Row(Modifier.padding(horizontal = 10.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                                            Icon(Icons.Default.LocalFireDepartment, null, tint = WarningOrange, modifier = Modifier.size(14.dp))
+                                            Spacer(Modifier.width(4.dp))
+                                            Text("连续 ${s.currentStreak} 天", style = MaterialTheme.typography.labelSmall, color = WarningOrange, fontWeight = FontWeight.Bold)
+                                        }
+                                    }
+                                }
+                            }
+                            Spacer(Modifier.height(12.dp))
+                            CalendarHeatmap(
+                                stats = s.calendarStats,
+                                days = 90,
+                                goalTarget = s.dailyGoalTarget
+                            )
+                        }
+                    }
+                }
+
+                // ═══ 薄弱环节 ═══
+                if (s.weakAreas.isNotEmpty()) {
+                    item {
+                        Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)) {
+                            Column(Modifier.padding(16.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Surface(modifier = Modifier.size(34.dp), shape = RoundedCornerShape(10.dp), color = WarningOrange.copy(alpha = 0.1f)) {
+                                        Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.WarningAmber, null, Modifier.size(20.dp), tint = WarningOrange) }
+                                    }
+                                    Spacer(Modifier.width(10.dp))
+                                    Text("薄弱环节", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                }
+                                Spacer(Modifier.height(10.dp))
+                                s.weakAreas.forEach { area ->
+                                    Surface(
+                                        onClick = { onRestartPractice(area.bankId, "wrong", -1L) },
+                                        modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp),
+                                        shape = RoundedCornerShape(10.dp),
+                                        color = WarningOrange.copy(alpha = 0.06f)
+                                    ) {
+                                        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                                            Column(Modifier.weight(1f)) {
+                                                Text(area.bankName, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                                                Text(
+                                                    "正确率: ${area.overallAccuracy.toInt()}% · 答题 ${area.totalAnswered} 题",
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = WrongRed
+                                                )
+                                                // Show weak types
+                                                area.typeAccuracies.filter { (_, v) -> v.first in 0.1f..60f }.forEach { (type, acc) ->
+                                                    Text(
+                                                        "  $type: ${acc.first.toInt()}%",
+                                                        style = MaterialTheme.typography.bodySmall,
+                                                        color = TextSecondary
+                                                    )
+                                                }
+                                            }
+                                            Icon(Icons.Default.KeyboardArrowRight, null, tint = TextTertiary, modifier = Modifier.size(18.dp))
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
                 // ═══ Practice Records ═══
                 item {
                     Card(modifier = Modifier.fillMaxWidth().animateContentSize(), shape = RoundedCornerShape(14.dp), elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)) {
@@ -135,11 +213,11 @@ fun ProfileScreen(
                                     Text("完成一次顺序练习或题型练习后将在这里显示", style = MaterialTheme.typography.bodySmall, color = TextTertiary)
                                 }
                             } else {
+                                var deletePracticeTarget by remember { mutableStateOf<Long?>(null) }
                                 s.practiceRecords.take(5).forEach { rec ->
                                     val name = s.bankNames[rec.bankId] ?: "未知题库"
                                     val date = SimpleDateFormat("MM-dd HH:mm", Locale.getDefault()).format(Date(rec.startTime))
                                     val accuracy = if (rec.answeredCount > 0) (rec.correctCount * 100) / rec.answeredCount else 0
-                                    var showDelPractice by remember { mutableStateOf(false) }
                                     Surface(
                                         onClick = { onRestartPractice(rec.bankId, rec.mode, rec.id) },
                                         modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp),
@@ -168,21 +246,22 @@ fun ProfileScreen(
                                                 }
                                             }
                                             Spacer(Modifier.width(4.dp))
-                                            IconButton(onClick = { showDelPractice = true }, modifier = Modifier.size(32.dp)) {
+                                            IconButton(onClick = { deletePracticeTarget = rec.id }, modifier = Modifier.size(32.dp)) {
                                                 Icon(Icons.Default.Delete, "删除", tint = WrongRed.copy(alpha = 0.5f), modifier = Modifier.size(18.dp))
                                             }
                                         }
                                     }
-                                    if (showDelPractice) {
-                                        AlertDialog(
-                                            onDismissRequest = { showDelPractice = false },
-                                            shape = RoundedCornerShape(20.dp),
-                                            title = { Text("删除记录", fontWeight = FontWeight.Bold) },
-                                            text = { Text("确定删除这条练习记录吗？") },
-                                            confirmButton = { Button(onClick = { viewModel.deletePracticeRecord(rec.id); showDelPractice = false }, colors = ButtonDefaults.buttonColors(containerColor = WrongRed)) { Text("删除") } },
-                                            dismissButton = { TextButton(onClick = { showDelPractice = false }) { Text("取消") } }
-                                        )
-                                    }
+                                }
+                                // Delete dialog (lifted out of forEach)
+                                deletePracticeTarget?.let { targetId ->
+                                    AlertDialog(
+                                        onDismissRequest = { deletePracticeTarget = null },
+                                        shape = RoundedCornerShape(20.dp),
+                                        title = { Text("删除记录", fontWeight = FontWeight.Bold) },
+                                        text = { Text("确定删除这条练习记录吗？") },
+                                        confirmButton = { Button(onClick = { viewModel.deletePracticeRecord(targetId); deletePracticeTarget = null }, colors = ButtonDefaults.buttonColors(containerColor = WrongRed)) { Text("删除") } },
+                                        dismissButton = { TextButton(onClick = { deletePracticeTarget = null }) { Text("取消") } }
+                                    )
                                 }
                                 if (s.practiceRecords.size > 5) {
                                     Spacer(Modifier.height(4.dp))
@@ -217,11 +296,11 @@ fun ProfileScreen(
                                     Text("完成一次模拟考试后将在这里显示", style = MaterialTheme.typography.bodySmall, color = TextTertiary)
                                 }
                             } else {
+                                var deleteExamTarget by remember { mutableStateOf<Long?>(null) }
                                 s.examRecords.forEach { rec ->
                                     val name = s.bankNames[rec.bankId] ?: "未知题库"
                                     val date = SimpleDateFormat("MM-dd HH:mm", Locale.getDefault()).format(Date(rec.examDate))
                                     val pc = if (rec.score >= 60) CorrectGreen else WrongRed
-                                    var showDelExam by remember { mutableStateOf(false) }
                                     Surface(
                                         onClick = { onExamRecordClick(rec.bankId, rec.score, rec.totalCount, rec.correctCount, rec.id) },
                                         modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp), shape = RoundedCornerShape(10.dp), color = SurfaceVariant.copy(alpha = 0.5f)
@@ -230,21 +309,21 @@ fun ProfileScreen(
                                             Column(Modifier.weight(1f)) { Text(name, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium); Text(date, style = MaterialTheme.typography.bodySmall, color = TextSecondary) }
                                             Column(horizontalAlignment = Alignment.End) { Text("${rec.score}分", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = pc); Text("${rec.correctCount}/${rec.totalCount}", style = MaterialTheme.typography.bodySmall, color = TextSecondary) }
                                             Spacer(Modifier.width(4.dp))
-                                            IconButton(onClick = { showDelExam = true }, modifier = Modifier.size(32.dp)) {
+                                            IconButton(onClick = { deleteExamTarget = rec.id }, modifier = Modifier.size(32.dp)) {
                                                 Icon(Icons.Default.Delete, "删除", tint = WrongRed.copy(alpha = 0.5f), modifier = Modifier.size(18.dp))
                                             }
                                         }
                                     }
-                                    if (showDelExam) {
-                                        AlertDialog(
-                                            onDismissRequest = { showDelExam = false },
-                                            shape = RoundedCornerShape(20.dp),
-                                            title = { Text("删除记录", fontWeight = FontWeight.Bold) },
-                                            text = { Text("确定删除这条考试记录吗？") },
-                                            confirmButton = { Button(onClick = { viewModel.deleteExamRecord(rec.id); showDelExam = false }, colors = ButtonDefaults.buttonColors(containerColor = WrongRed)) { Text("删除") } },
-                                            dismissButton = { TextButton(onClick = { showDelExam = false }) { Text("取消") } }
-                                        )
-                                    }
+                                }
+                                deleteExamTarget?.let { targetId ->
+                                    AlertDialog(
+                                        onDismissRequest = { deleteExamTarget = null },
+                                        shape = RoundedCornerShape(20.dp),
+                                        title = { Text("删除记录", fontWeight = FontWeight.Bold) },
+                                        text = { Text("确定删除这条考试记录吗？") },
+                                        confirmButton = { Button(onClick = { viewModel.deleteExamRecord(targetId); deleteExamTarget = null }, colors = ButtonDefaults.buttonColors(containerColor = WrongRed)) { Text("删除") } },
+                                        dismissButton = { TextButton(onClick = { deleteExamTarget = null }) { Text("取消") } }
+                                    )
                                 }
                             }
                         }
@@ -288,8 +367,8 @@ fun ProfileScreen(
                                 Text("关于", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                             }
                             Spacer(Modifier.height(10.dp))
-                            Text("刷题助手 v1.6", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
-                            Text("支持导入 txt/md/docx/xlsx/json 题库\n顺序练习 · 随机刷题 · 题型分类 · 错题重做\n模拟考试 · 收藏 · 搜索 · 标记 · 笔记 · 计时", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+                            Text("刷题助手 v1.7", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                            Text("支持导入 txt/md/docx/xlsx/json 题库\n顺序练习 · 随机刷题 · 题型分类 · 错题重做\n模拟考试 · 收藏 · 搜索 · 标记 · 笔记 · 计时\n艾宾浩斯复习 · 每日打卡 · 趋势图表 · 标签 · 语音朗读", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
                             Spacer(Modifier.height(10.dp)); HorizontalDivider(color = BorderLight)
                             Spacer(Modifier.height(10.dp))
                             Row(verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Default.Copyright, null, Modifier.size(16.dp), tint = TextSecondary); Spacer(Modifier.width(4.dp)); Text("著作权声明", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold) }

@@ -3,6 +3,7 @@ package com.quizapp.di
 import android.content.Context
 import com.quizapp.data.db.AppDatabase
 import com.quizapp.data.db.dao.AnsweredQuestionDao
+import com.quizapp.data.db.dao.DailyStatsDao
 import com.quizapp.data.db.dao.ExamRecordDao
 import com.quizapp.data.db.dao.FavoriteQuestionDao
 import com.quizapp.data.db.dao.MarkedQuestionDao
@@ -11,6 +12,9 @@ import com.quizapp.data.db.dao.PracticeRecordDao
 import com.quizapp.data.db.dao.QuestionBankDao
 import com.quizapp.data.db.dao.QuestionDao
 import com.quizapp.data.db.dao.QuestionNoteDao
+import com.quizapp.data.db.dao.QuestionTagDao
+import com.quizapp.data.db.dao.ReviewScheduleDao
+import com.quizapp.data.db.dao.TagDao
 import com.quizapp.data.db.dao.WrongRecordDao
 import dagger.Module
 import dagger.Provides
@@ -58,4 +62,16 @@ object DatabaseModule {
 
     @Provides
     fun provideQuestionNoteDao(db: AppDatabase): QuestionNoteDao = db.questionNoteDao()
+
+    @Provides
+    fun provideReviewScheduleDao(db: AppDatabase): ReviewScheduleDao = db.reviewScheduleDao()
+
+    @Provides
+    fun provideDailyStatsDao(db: AppDatabase): DailyStatsDao = db.dailyStatsDao()
+
+    @Provides
+    fun provideTagDao(db: AppDatabase): TagDao = db.tagDao()
+
+    @Provides
+    fun provideQuestionTagDao(db: AppDatabase): QuestionTagDao = db.questionTagDao()
 }
