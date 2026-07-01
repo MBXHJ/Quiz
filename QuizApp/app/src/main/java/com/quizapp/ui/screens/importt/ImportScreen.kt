@@ -1,6 +1,7 @@
 package com.quizapp.ui.screens.importt
 
 import android.net.Uri
+import android.provider.OpenableColumns
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
@@ -15,12 +16,30 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.quizapp.ui.theme.*
+
+/**
+ * 通过 ContentResolver 查询 URI 的真实文件名，
+ * 解决 lastPathSegment 不带扩展名导致 "不支持的文件格式" 的问题。
+ */
+private fun resolveFileName(context: android.content.Context, uri: Uri): String {
+    var name = "unknown.txt"
+    context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+        if (cursor.moveToFirst()) {
+            val idx = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+            if (idx >= 0) {
+                cursor.getString(idx)?.let { name = it }
+            }
+        }
+    }
+    return name
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -32,8 +51,13 @@ fun ImportScreen(
     val s by viewModel.uiState.collectAsState()
     val fm = LocalFocusManager.current
 
+    val context = LocalContext.current
+
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
-        uri?.let { viewModel.importFile(it, it.lastPathSegment ?: "unknown.txt") }
+        uri?.let {
+            val fileName = resolveFileName(context, it)
+            viewModel.importFile(it, fileName)
+        }
     }
 
     LaunchedEffect(s.isComplete) { if (s.isComplete) { kotlinx.coroutines.delay(1800); onImportComplete() } }
