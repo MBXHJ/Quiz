@@ -19,7 +19,7 @@ APK output: `app/build/outputs/apk/debug/app-debug.apk`
 
 Copy to project root for deployment:
 ```bash
-cp app/build/outputs/apk/debug/app-debug.apk "../../刷题助手_v{N}.apk"
+cp app/build/outputs/apk/debug/app-debug.apk "../../QuizApp_v{N}.apk"
 ```
 
 ## Architecture overview
