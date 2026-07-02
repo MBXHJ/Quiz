@@ -57,7 +57,10 @@ fun QuestionScreen(
         mode == "random" -> "随机刷题"
         mode == "wrong" -> "错题重做"
         mode == "review" -> "艾宾浩斯复习"
-        mode.startsWith("type_") -> "题型练习"
+        mode.startsWith("type_") -> when (mode) {
+            "type_FILL" -> "填空题练习"
+            else -> "题型练习"
+        }
         else -> "刷题"
     }
 
@@ -271,10 +274,59 @@ fun QuestionScreen(
                                     }
                                 }
                             }
+                            "FILL" -> {
+                                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Card(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        shape = RoundedCornerShape(14.dp),
+                                        colors = CardDefaults.cardColors(
+                                            containerColor = if (s.showResult) {
+                                                if (s.isCorrect) CorrectGreenBg else WrongRedBg
+                                            } else {
+                                                Color(0xFF8B5CF6).copy(alpha = 0.05f)
+                                            }
+                                        ),
+                                        border = if (s.showResult) {
+                                            BorderStroke(1.5.dp, if (s.isCorrect) CorrectGreen.copy(alpha = 0.5f) else WrongRed.copy(alpha = 0.5f))
+                                        } else BorderStroke(1.5.dp, Color(0xFF8B5CF6).copy(alpha = 0.3f))
+                                    ) {
+                                        Column(Modifier.padding(16.dp)) {
+                                            Text("你的答案：", style = MaterialTheme.typography.labelMedium, color = TextSecondary)
+                                            Spacer(Modifier.height(8.dp))
+                                            if (s.showResult) {
+                                                Text(s.selectedAnswer.ifEmpty { "（未作答）" },
+                                                    style = MaterialTheme.typography.bodyLarge,
+                                                    color = if (s.isCorrect) CorrectGreen else WrongRed,
+                                                    fontWeight = FontWeight.Medium)
+                                            } else {
+                                                OutlinedTextField(
+                                                    value = s.selectedAnswer,
+                                                    onValueChange = { viewModel.selectAnswer(it) },
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    placeholder = { Text("请输入答案...") },
+                                                    singleLine = true,
+                                                    shape = RoundedCornerShape(10.dp)
+                                                )
+                                                Spacer(Modifier.height(8.dp))
+                                                Button(
+                                                    onClick = {
+                                                        if (s.selectedAnswer.isNotBlank()) {
+                                                            viewModel.selectAnswer(s.selectedAnswer)
+                                                        }
+                                                    },
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    shape = RoundedCornerShape(10.dp),
+                                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF8B5CF6))
+                                                ) { Text("提交答案") }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
                         // Result panel
                         AnimatedVisibility(s.showResult, enter = fadeIn() + slideInVertically { it / 4 } + expandVertically(), exit = fadeOut() + shrinkVertically()) {
-                            ResultPanel(q, s)
+                            if (q.questionType == "FILL") FillResultPanel(q, s) else ResultPanel(q, s)
                         }
                     }
                     // Bottom nav
@@ -449,6 +501,34 @@ private fun ResultPanel(q: QuestionEntity, s: QuestionUiState) {
             if (s.wrongCount > 0) {
                 Spacer(Modifier.height(6.dp))
                 Surface(shape = RoundedCornerShape(6.dp), color = WrongRed.copy(alpha = 0.06f)) { Text("本题累计错 ${s.wrongCount} 次", Modifier.padding(horizontal = 8.dp, vertical = 4.dp), style = MaterialTheme.typography.labelSmall, color = WrongRed) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun FillResultPanel(q: QuestionEntity, s: QuestionUiState) {
+    Card(
+        modifier = Modifier.fillMaxWidth().padding(top = 14.dp),
+        shape = RoundedCornerShape(14.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(containerColor = if (s.isCorrect) CorrectGreenBg else WrongRedBg),
+        border = BorderStroke(1.dp, if (s.isCorrect) CorrectGreen.copy(alpha = 0.25f) else WrongRed.copy(alpha = 0.25f))
+    ) {
+        Column(Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Surface(shape = CircleShape, color = if (s.isCorrect) CorrectGreen.copy(alpha = 0.12f) else WrongRed.copy(alpha = 0.12f), modifier = Modifier.size(34.dp)) {
+                    Box(contentAlignment = Alignment.Center) { Icon(if (s.isCorrect) Icons.Default.CheckCircle else Icons.Default.Cancel, null, tint = if (s.isCorrect) CorrectGreen else WrongRed, modifier = Modifier.size(20.dp)) }
+                }
+                Spacer(Modifier.width(10.dp))
+                Text(if (s.isCorrect) "回答正确！" else "回答错误", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = if (s.isCorrect) CorrectGreen else WrongRed)
+            }
+            Spacer(Modifier.height(10.dp)); HorizontalDivider(color = Border)
+            Spacer(Modifier.height(10.dp))
+            Row {
+                Surface(shape = RoundedCornerShape(6.dp), color = CorrectGreen.copy(alpha = 0.1f)) { Text("正确答案", Modifier.padding(horizontal = 8.dp, vertical = 2.dp), style = MaterialTheme.typography.labelSmall, color = CorrectGreen, fontWeight = FontWeight.SemiBold) }
+                Spacer(Modifier.width(8.dp))
+                Text(q.answer, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
             }
         }
     }

@@ -112,4 +112,34 @@ class ImportRepository @Inject constructor(
                 failCount = parsedQuestions.size - questions.size
             )
         }
+
+    suspend fun importDocxFromAssets(assetFileName: String, bankName: String): ImportResult =
+        withContext(Dispatchers.IO) {
+            val bank = QuestionBankEntity(name = bankName)
+            val bankId = bankDao.insertBank(bank)
+
+            val parsedQuestions = DocxParser(context).parseFromStream(
+                context.assets.open(assetFileName)
+            )
+
+            val questions = parsedQuestions.map { parsed ->
+                QuestionEntity(
+                    bankId = bankId,
+                    questionType = parsed.questionType,
+                    content = parsed.content,
+                    options = parsed.options.joinToString("|||"),
+                    answer = parsed.answer,
+                    analysis = parsed.analysis
+                )
+            }
+
+            questionDao.insertQuestions(questions)
+            bankDao.updateQuestionCount(bankId, questions.size)
+
+            ImportResult(
+                bankId = bankId,
+                successCount = questions.size,
+                failCount = parsedQuestions.size - questions.size
+            )
+        }
 }

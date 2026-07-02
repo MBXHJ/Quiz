@@ -363,6 +363,7 @@ class QuestionViewModel @Inject constructor(
                 state.mode == "type_SINGLE" -> "单选题练习"
                 state.mode == "type_MULTI" -> "多选题练习"
                 state.mode == "type_JUDGE" -> "判断题练习"
+                state.mode == "type_FILL" -> "填空题练习"
                 else -> state.mode
             }
 

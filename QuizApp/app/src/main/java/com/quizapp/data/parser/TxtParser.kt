@@ -14,6 +14,14 @@ class TxtParser : QuestionParser {
             val questionMatch = Regex("""^(?:#+\s*)?(\d+)[.、．,，]\s*(.*)""").find(line)
             if (questionMatch != null) {
                 val questionContent = questionMatch.groupValues[2].trim()
+
+                // Detect embedded judge answer: "（对）" or "（错）" at end
+                val embeddedJudge = Regex("""[（(]\s*(对|错|正确|错误)\s*[）)]\s*$""").find(questionContent)
+                var embeddedAnswer = ""
+                if (embeddedJudge != null) {
+                    val ans = embeddedJudge.groupValues[1]
+                    embeddedAnswer = if (ans == "对" || ans == "正确") "正确" else "错误"
+                }
                 val options = mutableListOf<String>()
                 var answer = ""
                 var analysis = ""
@@ -42,8 +50,19 @@ class TxtParser : QuestionParser {
                 while (i < lines.size) {
                     val detailLine = lines[i]
                     when {
-                        detailLine.startsWith("答案", ignoreCase = true) -> {
-                            answer = detailLine.replace(Regex("""答案[:：]\s*"""), "").trim()
+                        detailLine.startsWith("答案", ignoreCase = true) || detailLine.startsWith("参考答案", ignoreCase = true) -> {
+                            answer = detailLine.replace(Regex("""(?:参考)?答案[:：]\s*"""), "").trim()
+                                .trim('"', '“', '”', '‘', '’', '\'', '。', '.')
+                            i++
+                        }
+                        detailLine.startsWith("正确的答案是", ignoreCase = true) -> {
+                            answer = detailLine.replace(Regex("""正确的答案是[：:]\s*"""), "").trim()
+                                .trim('"', '“', '”', '‘', '’', '\'', '。', '.')
+                            i++
+                        }
+                        detailLine.startsWith("正确答案是", ignoreCase = true) || detailLine.startsWith("正确答案为", ignoreCase = true) -> {
+                            answer = detailLine.replace(Regex("""正确答案[是为][：:"]?\s*"""), "").trim()
+                                .trim('"', '“', '”', '‘', '’', '\'', '。', '.')
                             i++
                         }
                         detailLine.startsWith("解析", ignoreCase = true) -> {
@@ -63,16 +82,40 @@ class TxtParser : QuestionParser {
                 }
 
                 // Determine question type
+                // Normalize "对"/"错" → "正确"/"错误" first
+                if (answer == "对") answer = "正确"
+                if (answer == "错") answer = "错误"
+
+                // Use embedded answer as fallback
+                if (answer.isEmpty() && embeddedAnswer.isNotEmpty()) {
+                    answer = embeddedAnswer
+                }
+
                 if (options.isEmpty()) {
-                    questionType = "JUDGE"
+                    questionType = if (answer == "正确" || answer == "错误") "JUDGE" else "SINGLE"
                 }
                 // Check if options are "A. 正确 / B. 错误" -> JUDGE
                 val optionTexts = options.map { it.substringAfter(". ").trim() }
                 if (optionTexts.size == 2 && optionTexts.containsAll(listOf("正确", "错误"))) {
                     questionType = "JUDGE"
                 }
-                if (answer.length > 1 && !answer.contains("正确") && !answer.contains("错误") && questionType != "JUDGE") {
+                // Detect FILL type: has blank markers, no options, text answer
+                if (options.isEmpty() && answer.isNotEmpty() &&
+                    answer != "正确" && answer != "错误" &&
+                    !answer.all { it in 'A'..'Z' } &&
+                    (questionContent.contains("_____") || questionContent.contains("____") ||
+                     questionContent.contains("___") || questionContent.contains("（）") ||
+                     questionContent.contains("( )") || questionContent.contains("（  ）"))) {
+                    questionType = "FILL"
+                }
+                if (answer.length > 1 && !answer.contains("正确") && !answer.contains("错误") && questionType != "JUDGE" && questionType != "FILL") {
                     questionType = "MULTI"
+                }
+
+                // For JUDGE questions without options, add standard 正确/错误 options
+                if (questionType == "JUDGE" && options.isEmpty()) {
+                    options.add("A. 正确")
+                    options.add("B. 错误")
                 }
 
                 // Normalize answer format
@@ -90,6 +133,9 @@ class TxtParser : QuestionParser {
                         if (optMap.values.containsAll(listOf("正确", "错误"))) {
                             answer = optMap[answer.trim().uppercase()] ?: answer
                         }
+                        // Normalize "对"/"错" → "正确"/"错误"
+                        if (answer == "对") answer = "正确"
+                        if (answer == "错") answer = "错误"
                     }
                 }
 

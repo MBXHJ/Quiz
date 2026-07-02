@@ -43,7 +43,10 @@ fun PracticeScreen(
 
     // Clamp random count when question count changes
     LaunchedEffect(s.questionCount) {
-        if (s.questionCount > 0) randomCount = randomCount.coerceIn(10, s.questionCount)
+        if (s.questionCount > 0) {
+            val min = minOf(10, s.questionCount)
+            randomCount = randomCount.coerceIn(min, s.questionCount)
+        }
     }
 
     Scaffold(
@@ -206,7 +209,8 @@ fun PracticeScreen(
                     listOf(
                         Triple("单选题", "SINGLE", Color(0xFF2563EB)),
                         Triple("多选题", "MULTI", CorrectGreen),
-                        Triple("判断题", "JUDGE", WarningOrange)
+                        Triple("判断题", "JUDGE", WarningOrange),
+                        Triple("填空题", "FILL", Color(0xFF8B5CF6))
                     ).forEach { (label, type, col) ->
                         Surface(
                             onClick = { showTypeDlg = false; onStartPractice("type_$type") },

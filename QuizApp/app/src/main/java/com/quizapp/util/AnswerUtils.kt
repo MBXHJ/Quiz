@@ -7,6 +7,7 @@ package com.quizapp.util
  */
 fun normalizeAnswer(answer: String, questionType: String): String {
     if (questionType == "JUDGE") return answer.trim()
+    if (questionType == "FILL") return answer.trim()
     return answer.replace(Regex("""[\s,，、]+"""), "")
         .uppercase()
         .toCharArray()

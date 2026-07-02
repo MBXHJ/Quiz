@@ -102,12 +102,14 @@ fun TypeTag(type: String) {
         "SINGLE" -> "单选题" to Color(0xFF2563EB)
         "MULTI" -> "多选题" to Color(0xFF10B981)
         "JUDGE" -> "判断题" to Color(0xFFF59E0B)
+        "FILL" -> "填空题" to Color(0xFF8B5CF6)
         else -> type to TextSecondary
     }
     val ic = when (type) {
         "SINGLE" -> Icons.Default.RadioButtonChecked
         "MULTI" -> Icons.Default.CheckBox
         "JUDGE" -> Icons.Default.Balance
+        "FILL" -> Icons.Default.Edit
         else -> Icons.Default.Help
     }
     Surface(shape = RoundedCornerShape(8.dp), color = color.copy(alpha = 0.10f)) {

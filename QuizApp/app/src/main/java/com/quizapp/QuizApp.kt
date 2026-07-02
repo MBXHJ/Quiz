@@ -33,6 +33,10 @@ class QuizApp : Application() {
                     "人工智能训练师理论题1200题.txt",
                     "人工智能训练师三级(1200题)"
                 )
+                importRepository.importFromAssets(
+                    "操作系统原理与应用_规范化.txt",
+                    "操作系统原理与应用"
+                )
             }
         }
     }
