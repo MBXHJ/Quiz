@@ -331,11 +331,9 @@ fun QuestionScreen(
                                 }
                             }
                         }
-                        // Result panel (not shown for FILL — it's inlined above)
-                        if (q.questionType != "FILL") {
-                            AnimatedVisibility(s.showResult, enter = fadeIn() + slideInVertically { it / 4 } + expandVertically(), exit = fadeOut() + shrinkVertically()) {
-                                if (q.questionType == "FILL") FillResultPanel(q, s) else ResultPanel(q, s)
-                            }
+                        // Result panel (shown for all types)
+                        AnimatedVisibility(s.showResult, enter = fadeIn() + slideInVertically { it / 4 } + expandVertically(), exit = fadeOut() + shrinkVertically()) {
+                            if (q.questionType == "FILL") FillResultPanel(q, s) else ResultPanel(q, s)
                         }
                     }
                     // Bottom nav
