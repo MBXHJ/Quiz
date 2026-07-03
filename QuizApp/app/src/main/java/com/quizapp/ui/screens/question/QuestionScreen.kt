@@ -298,17 +298,6 @@ fun QuestionScreen(
                                                     style = MaterialTheme.typography.bodyLarge,
                                                     color = if (s.isCorrect) CorrectGreen else WrongRed,
                                                     fontWeight = FontWeight.Medium)
-                                                Spacer(Modifier.height(12.dp))
-                                                HorizontalDivider(color = Border)
-                                                Spacer(Modifier.height(12.dp))
-                                                Row {
-                                                    Surface(shape = RoundedCornerShape(6.dp), color = CorrectGreen.copy(alpha = 0.1f)) {
-                                                        Text("正确答案", Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                                                            style = MaterialTheme.typography.labelSmall, color = CorrectGreen, fontWeight = FontWeight.SemiBold)
-                                                    }
-                                                    Spacer(Modifier.width(8.dp))
-                                                    Text(q.answer.ifEmpty { "（答案为空）" }, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
-                                                }
                                             } else {
                                                 OutlinedTextField(
                                                     value = s.selectedAnswer,
@@ -515,10 +504,6 @@ private fun ResultPanel(q: QuestionEntity, s: QuestionUiState) {
 
 @Composable
 private fun FillResultPanel(q: QuestionEntity, s: QuestionUiState) {
-    val displayAnswer = when {
-        q.answer.isNotEmpty() -> q.answer
-        else -> "（答案在DB中为空）"
-    }
     Card(
         modifier = Modifier.fillMaxWidth().padding(top = 14.dp),
         shape = RoundedCornerShape(14.dp),
@@ -536,14 +521,11 @@ private fun FillResultPanel(q: QuestionEntity, s: QuestionUiState) {
             }
             Spacer(Modifier.height(10.dp)); HorizontalDivider(color = Border)
             Spacer(Modifier.height(10.dp))
-            Row {
-                Surface(shape = RoundedCornerShape(6.dp), color = CorrectGreen.copy(alpha = 0.1f)) { Text("正确答案", Modifier.padding(horizontal = 8.dp, vertical = 2.dp), style = MaterialTheme.typography.labelSmall, color = CorrectGreen, fontWeight = FontWeight.SemiBold) }
-                Spacer(Modifier.width(8.dp))
-                Text(displayAnswer, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+            Surface(shape = RoundedCornerShape(6.dp), color = CorrectGreen.copy(alpha = 0.1f)) {
+                Text("正确答案", Modifier.padding(horizontal = 8.dp, vertical = 2.dp), style = MaterialTheme.typography.labelSmall, color = CorrectGreen, fontWeight = FontWeight.SemiBold)
             }
-            // Debug: show raw answer from DB
             Spacer(Modifier.height(6.dp))
-            Text("DB:${q.answer}|type:${q.questionType}", style = MaterialTheme.typography.labelSmall, color = TextTertiary)
+            Text(q.answer.ifEmpty { "（答案为空）" }, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color.Unspecified)
         }
     }
 }
