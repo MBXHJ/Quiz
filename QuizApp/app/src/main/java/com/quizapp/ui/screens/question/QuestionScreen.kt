@@ -307,7 +307,7 @@ fun QuestionScreen(
                                                             style = MaterialTheme.typography.labelSmall, color = CorrectGreen, fontWeight = FontWeight.SemiBold)
                                                     }
                                                     Spacer(Modifier.width(8.dp))
-                                                    Text(q.answer, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                                                    Text(q.answer.ifEmpty { "（答案为空）" }, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
                                                 }
                                             } else {
                                                 OutlinedTextField(
@@ -515,6 +515,11 @@ private fun ResultPanel(q: QuestionEntity, s: QuestionUiState) {
 
 @Composable
 private fun FillResultPanel(q: QuestionEntity, s: QuestionUiState) {
+    val displayAnswer = when {
+        q.answer.isNotEmpty() -> q.answer
+        s.selectedAnswer.isNotEmpty() && s.selectedAnswer == q.answer -> s.selectedAnswer
+        else -> "（未找到答案）"
+    }
     Card(
         modifier = Modifier.fillMaxWidth().padding(top = 14.dp),
         shape = RoundedCornerShape(14.dp),
@@ -535,7 +540,7 @@ private fun FillResultPanel(q: QuestionEntity, s: QuestionUiState) {
             Row {
                 Surface(shape = RoundedCornerShape(6.dp), color = CorrectGreen.copy(alpha = 0.1f)) { Text("正确答案", Modifier.padding(horizontal = 8.dp, vertical = 2.dp), style = MaterialTheme.typography.labelSmall, color = CorrectGreen, fontWeight = FontWeight.SemiBold) }
                 Spacer(Modifier.width(8.dp))
-                Text(q.answer, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                Text(displayAnswer, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
             }
         }
     }
