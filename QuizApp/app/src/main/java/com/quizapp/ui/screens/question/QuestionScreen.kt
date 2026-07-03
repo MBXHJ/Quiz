@@ -309,11 +309,7 @@ fun QuestionScreen(
                                                 )
                                                 Spacer(Modifier.height(8.dp))
                                                 Button(
-                                                    onClick = {
-                                                        if (s.selectedAnswer.isNotBlank()) {
-                                                            viewModel.selectAnswer(s.selectedAnswer)
-                                                        }
-                                                    },
+                                                    onClick = { viewModel.submitFillAnswer() },
                                                     modifier = Modifier.fillMaxWidth(),
                                                     shape = RoundedCornerShape(10.dp),
                                                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF8B5CF6))

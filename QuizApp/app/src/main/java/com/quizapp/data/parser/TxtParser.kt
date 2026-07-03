@@ -91,7 +91,17 @@ class TxtParser : QuestionParser {
                     answer = embeddedAnswer
                 }
 
-                if (options.isEmpty()) {
+                // FILL detection MUST happen before JUDGE default
+                if (options.isEmpty() && answer.isNotEmpty() &&
+                    answer != "正确" && answer != "错误" &&
+                    !answer.all { it in 'A'..'Z' } &&
+                    (questionContent.contains("_____") || questionContent.contains("____") ||
+                     questionContent.contains("___") || questionContent.contains("（）") ||
+                     questionContent.contains("( )") || questionContent.contains("（  ）"))) {
+                    questionType = "FILL"
+                }
+
+                if (options.isEmpty() && questionType != "FILL") {
                     questionType = if (answer == "正确" || answer == "错误") "JUDGE" else "SINGLE"
                 }
                 // Check if options are "A. 正确 / B. 错误" -> JUDGE

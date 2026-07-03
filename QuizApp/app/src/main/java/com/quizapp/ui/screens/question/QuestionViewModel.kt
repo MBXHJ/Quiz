@@ -189,6 +189,9 @@ class QuestionViewModel @Inject constructor(
                 state.isMultiSelected + answer
             }
             _uiState.value = state.copy(isMultiSelected = newSelected)
+        } else if (question.questionType == "FILL") {
+            // FILL: just update the text, don't submit yet
+            _uiState.value = state.copy(selectedAnswer = answer)
         } else {
             val isCorrect = normalizeAnswer(answer, question.questionType) == normalizeAnswer(question.answer, question.questionType)
             val newAnswered = state.answeredSet + state.currentIndex
@@ -208,6 +211,31 @@ class QuestionViewModel @Inject constructor(
             markAnswered(question.id, state.bankId)
             saveProgress(state.currentIndex, state.questions.size, newAnsweredCount, newCorrectCount)
         }
+    }
+
+    fun submitFillAnswer() {
+        val state = _uiState.value
+        val question = state.questions.getOrNull(state.currentIndex) ?: return
+        if (state.showResult || state.selectedAnswer.isBlank()) return
+
+        val answer = state.selectedAnswer
+        val isCorrect = normalizeAnswer(answer, question.questionType) == normalizeAnswer(question.answer, question.questionType)
+        val newAnswered = state.answeredSet + state.currentIndex
+        val newCorrectCount = state.correctCount + if (isCorrect) 1 else 0
+        val newAnsweredCount = state.answeredCount + 1
+        val newWrongIds = if (!isCorrect) state.wrongQuestionIds + question.id else state.wrongQuestionIds
+
+        _uiState.value = state.copy(
+            selectedAnswer = answer,
+            showResult = true,
+            isCorrect = isCorrect,
+            answeredSet = newAnswered,
+            correctCount = newCorrectCount,
+            answeredCount = newAnsweredCount
+        )
+        recordWrongIfNeeded(question.id, isCorrect)
+        markAnswered(question.id, state.bankId)
+        saveProgress(state.currentIndex, state.questions.size, newAnsweredCount, newCorrectCount)
     }
 
     fun confirmMultiSelect() {
