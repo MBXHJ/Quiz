@@ -46,7 +46,9 @@ data class QuestionUiState(
     val allTags: List<com.quizapp.data.db.entity.TagEntity> = emptyList(),
     val showTagDialog: Boolean = false,
     // TTS
-    val isSpeaking: Boolean = false
+    val isSpeaking: Boolean = false,
+    // FILL correct answer (from DB, stored separately for display)
+    val fillCorrectAnswer: String = ""
 )
 
 @HiltViewModel

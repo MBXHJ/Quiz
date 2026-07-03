@@ -517,8 +517,7 @@ private fun ResultPanel(q: QuestionEntity, s: QuestionUiState) {
 private fun FillResultPanel(q: QuestionEntity, s: QuestionUiState) {
     val displayAnswer = when {
         q.answer.isNotEmpty() -> q.answer
-        s.selectedAnswer.isNotEmpty() && s.selectedAnswer == q.answer -> s.selectedAnswer
-        else -> "（未找到答案）"
+        else -> "（答案在DB中为空）"
     }
     Card(
         modifier = Modifier.fillMaxWidth().padding(top = 14.dp),
@@ -542,6 +541,9 @@ private fun FillResultPanel(q: QuestionEntity, s: QuestionUiState) {
                 Spacer(Modifier.width(8.dp))
                 Text(displayAnswer, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
             }
+            // Debug: show raw answer from DB
+            Spacer(Modifier.height(6.dp))
+            Text("DB:${q.answer}|type:${q.questionType}", style = MaterialTheme.typography.labelSmall, color = TextTertiary)
         }
     }
 }
