@@ -53,7 +53,7 @@ import com.quizapp.data.db.entity.WrongRecordEntity
         TagEntity::class,
         QuestionTagEntity::class
     ],
-    version = 7,
+    version = 8,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
