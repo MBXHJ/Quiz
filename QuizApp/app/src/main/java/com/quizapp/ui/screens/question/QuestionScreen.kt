@@ -525,7 +525,12 @@ private fun FillResultPanel(q: QuestionEntity, s: QuestionUiState) {
                 Text("正确答案", Modifier.padding(horizontal = 8.dp, vertical = 2.dp), style = MaterialTheme.typography.labelSmall, color = CorrectGreen, fontWeight = FontWeight.SemiBold)
             }
             Spacer(Modifier.height(6.dp))
-            Text(q.answer.ifEmpty { "（答案为空）" }, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Text(
+                q.answer.ifEmpty { "（答案为空）" },
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF2563EB)  // 蓝色，深色浅色都可见
+            )
         }
     }
 }
