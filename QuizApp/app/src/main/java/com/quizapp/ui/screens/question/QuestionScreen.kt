@@ -298,6 +298,17 @@ fun QuestionScreen(
                                                     style = MaterialTheme.typography.bodyLarge,
                                                     color = if (s.isCorrect) CorrectGreen else WrongRed,
                                                     fontWeight = FontWeight.Medium)
+                                                Spacer(Modifier.height(12.dp))
+                                                HorizontalDivider(color = Border)
+                                                Spacer(Modifier.height(12.dp))
+                                                Row {
+                                                    Surface(shape = RoundedCornerShape(6.dp), color = CorrectGreen.copy(alpha = 0.1f)) {
+                                                        Text("正确答案", Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                                                            style = MaterialTheme.typography.labelSmall, color = CorrectGreen, fontWeight = FontWeight.SemiBold)
+                                                    }
+                                                    Spacer(Modifier.width(8.dp))
+                                                    Text(q.answer, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                                                }
                                             } else {
                                                 OutlinedTextField(
                                                     value = s.selectedAnswer,
@@ -320,9 +331,11 @@ fun QuestionScreen(
                                 }
                             }
                         }
-                        // Result panel
-                        AnimatedVisibility(s.showResult, enter = fadeIn() + slideInVertically { it / 4 } + expandVertically(), exit = fadeOut() + shrinkVertically()) {
-                            if (q.questionType == "FILL") FillResultPanel(q, s) else ResultPanel(q, s)
+                        // Result panel (not shown for FILL — it's inlined above)
+                        if (q.questionType != "FILL") {
+                            AnimatedVisibility(s.showResult, enter = fadeIn() + slideInVertically { it / 4 } + expandVertically(), exit = fadeOut() + shrinkVertically()) {
+                                if (q.questionType == "FILL") FillResultPanel(q, s) else ResultPanel(q, s)
+                            }
                         }
                     }
                     // Bottom nav
