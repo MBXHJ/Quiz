@@ -1,3 +1,13 @@
+## v1.8.1 更新内容
+
+### 🐛 修复
+
+- **填空题正确答案不显示**：FillResultPanel 被死代码屏蔽，AnimatedVisibility 外层 if guard 错误跳过 FILL 类型
+- **双卡片重复**：内联卡片和 FillResultPanel 同时渲染，正确答案文字在 Row 内被裁剪
+- **深色模式答案不可见**：color = Color.Unspecified → 改用蓝色 Color(0xFF2563EB)
+- **数据库重建**：v7 → v8 → v9，触发 fallbackToDestructiveMigration 确保新题库正确入库
+- **填空题即输即交**：改为文本编辑 + 按钮确认提交
+
 ## v1.8 更新内容
 
 ### ✨ 新增功能
