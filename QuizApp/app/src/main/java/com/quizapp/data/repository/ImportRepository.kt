@@ -6,10 +6,7 @@ import com.quizapp.data.db.dao.QuestionBankDao
 import com.quizapp.data.db.dao.QuestionDao
 import com.quizapp.data.db.entity.QuestionBankEntity
 import com.quizapp.data.db.entity.QuestionEntity
-import com.quizapp.data.parser.DocxParser
-import com.quizapp.data.parser.ExcelParser
-import com.quizapp.data.parser.JsonParser
-import com.quizapp.data.parser.TxtParser
+import com.quizapp.data.parser.*
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -25,9 +22,13 @@ class ImportRepository @Inject constructor(
     data class ImportResult(
         val bankId: Long,
         val successCount: Int,
-        val failCount: Int
+        val failCount: Int,
+        val validationErrors: List<QuestionValidator.InvalidQuestion> = emptyList()
     )
 
+    /**
+     * 统一的导入处理管道：解析 → 规范化 → 校验 → 写入DB。
+     */
     suspend fun importFromUri(
         bankName: String,
         uri: Uri,
@@ -59,7 +60,16 @@ class ImportRepository @Inject constructor(
             else -> throw IllegalArgumentException("不支持的文件格式: $fileName")
         }
 
-        val questions = parsedQuestions.map { parsed ->
+        // ── 规范化：统一格式 ──
+        val normalized = parsedQuestions.map { QuestionNormalizer.normalize(it) }
+
+        // ── 校验：过滤无效题 ──
+        val batch = QuestionValidator.validateAll(normalized)
+        val validQuestions = batch.valid
+        val invalidQuestions = batch.invalid
+
+        // ── 写入数据库 ──
+        val questions = validQuestions.map { parsed ->
             QuestionEntity(
                 bankId = bankId,
                 questionType = parsed.questionType,
@@ -76,7 +86,8 @@ class ImportRepository @Inject constructor(
         ImportResult(
             bankId = bankId,
             successCount = questions.size,
-            failCount = parsedQuestions.size - questions.size
+            failCount = parsedQuestions.size - questions.size,
+            validationErrors = invalidQuestions
         )
     }
 
@@ -92,7 +103,10 @@ class ImportRepository @Inject constructor(
             val text = context.assets.open(assetFileName).bufferedReader().use { it.readText() }
             val parsedQuestions = TxtParser().parse(text)
 
-            val questions = parsedQuestions.map { parsed ->
+            val normalized = parsedQuestions.map { QuestionNormalizer.normalize(it) }
+            val batch = QuestionValidator.validateAll(normalized)
+
+            val questions = batch.valid.map { parsed ->
                 QuestionEntity(
                     bankId = bankId,
                     questionType = parsed.questionType,
@@ -109,7 +123,8 @@ class ImportRepository @Inject constructor(
             ImportResult(
                 bankId = bankId,
                 successCount = questions.size,
-                failCount = parsedQuestions.size - questions.size
+                failCount = parsedQuestions.size - questions.size,
+                validationErrors = batch.invalid
             )
         }
 
@@ -122,7 +137,10 @@ class ImportRepository @Inject constructor(
                 context.assets.open(assetFileName)
             )
 
-            val questions = parsedQuestions.map { parsed ->
+            val normalized = parsedQuestions.map { QuestionNormalizer.normalize(it) }
+            val batch = QuestionValidator.validateAll(normalized)
+
+            val questions = batch.valid.map { parsed ->
                 QuestionEntity(
                     bankId = bankId,
                     questionType = parsed.questionType,
@@ -139,7 +157,8 @@ class ImportRepository @Inject constructor(
             ImportResult(
                 bankId = bankId,
                 successCount = questions.size,
-                failCount = parsedQuestions.size - questions.size
+                failCount = parsedQuestions.size - questions.size,
+                validationErrors = batch.invalid
             )
         }
 }

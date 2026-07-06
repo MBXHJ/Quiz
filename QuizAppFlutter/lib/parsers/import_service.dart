@@ -1,35 +1,61 @@
-import 'dart:html' show FileReader;
 import 'package:file_picker/file_picker.dart';
 import '../models/models.dart';
 import 'txt_parser.dart';
+import 'question_normalizer.dart';
+import 'question_validator.dart';
+
+class ImportResult {
+  final List<Question> questions;
+  final List<InvalidQuestion> invalidQuestions;
+
+  const ImportResult({required this.questions, required this.invalidQuestions});
+
+  int get successCount => questions.length;
+  int get failCount => invalidQuestions.length;
+}
 
 class ImportService {
-  final bankId;
+  final int bankId;
 
   ImportService(this.bankId);
 
-  Future<List<Question>> parseFile(PlatformFile file, int bankId) async {
+  Future<ImportResult> parseFile(PlatformFile file, int bankId) async {
     final name = file.name.toLowerCase();
 
+    List<Question> parsed;
     if (name.endsWith('.txt') || name.endsWith('.md')) {
       final content = String.fromCharCodes(file.bytes!);
-      return TxtParser().parse(content, bankId);
-    }
-
-    // For .docx and .xlsx on mobile, we rely on the bytes
-    if (name.endsWith('.docx')) {
+      parsed = TxtParser().parse(content, bankId);
+    } else if (name.endsWith('.docx')) {
       final content = String.fromCharCodes(file.bytes!);
-      return TxtParser().parse(content, bankId);
+      parsed = TxtParser().parse(content, bankId);
+    } else {
+      throw Exception('不支持的文件格式: ${file.name}');
     }
 
-    throw Exception('不支持的文件格式: ${file.name}');
+    // ── 规范化 ──
+    final normalized = parsed.map((q) => QuestionNormalizer.normalize(q)).toList();
+
+    // ── 校验 ──
+    final result = QuestionValidator.validateAll(normalized);
+
+    return ImportResult(
+      questions: result.valid,
+      invalidQuestions: result.invalid,
+    );
   }
 
-  static Future<List<Question>> parseFromBytes(
+  static Future<ImportResult> parseFromBytes(
     String fileName, List<int> bytes, int bankId) async {
     if (fileName.endsWith('.txt') || fileName.endsWith('.md')) {
       final content = String.fromCharCodes(bytes);
-      return TxtParser().parse(content, bankId);
+      final parsed = TxtParser().parse(content, bankId);
+      final normalized = parsed.map((q) => QuestionNormalizer.normalize(q)).toList();
+      final result = QuestionValidator.validateAll(normalized);
+      return ImportResult(
+        questions: result.valid,
+        invalidQuestions: result.invalid,
+      );
     }
     throw Exception('不支持的文件格式: $fileName');
   }

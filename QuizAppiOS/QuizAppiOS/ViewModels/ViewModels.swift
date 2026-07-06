@@ -563,6 +563,8 @@ final class ImportViewModel: ObservableObject {
     @Published var errorMessage: String? = nil
     @Published var importedCount: Int = 0
     @Published var showSuccess: Bool = false
+    @Published var skippedCount: Int = 0
+    @Published var validationErrors: [String] = []
 
     func importFile(url: URL) {
         guard !bankName.trimmingCharacters(in: .whitespaces).isEmpty else {
@@ -572,6 +574,7 @@ final class ImportViewModel: ObservableObject {
 
         isImporting = true
         errorMessage = nil
+        validationErrors = []
 
         do {
             let ext = url.pathExtension.lowercased()
@@ -580,10 +583,18 @@ final class ImportViewModel: ObservableObject {
             }
 
             let content = try String(contentsOf: url, encoding: .utf8)
-            let questions = try parser.parse(content: content, bankId: 0)
+            let parsed = try parser.parse(content: content, bankId: 0)
 
-            guard !questions.isEmpty else {
-                throw ParseError.invalidFormat("未解析到任何题目")
+            // ── 规范化 ──
+            let normalized = parsed.map { QuestionNormalizer.normalize($0) }
+
+            // ── 校验 ──
+            let result = QuestionValidator.validateAll(normalized)
+            let validQuestions = result.valid
+            let invalidQuestions = result.invalid
+
+            guard !validQuestions.isEmpty else {
+                throw ParseError.invalidFormat("所有题目均未通过校验")
             }
 
             var bank = QuestionBank(name: bankName.trimmingCharacters(in: .whitespaces))
@@ -593,7 +604,7 @@ final class ImportViewModel: ObservableObject {
                 throw ParseError.invalidFormat("创建题库失败")
             }
 
-            let qs = questions.map { q in
+            let qs = validQuestions.map { q in
                 Question(bankId: bankId, questionType: q.questionType,
                          content: q.content, options: q.options,
                          answer: q.answer, analysis: q.analysis)
@@ -602,6 +613,10 @@ final class ImportViewModel: ObservableObject {
             try QuestionBankDAO().updateQuestionCount(bankId: bankId)
 
             importedCount = qs.count
+            skippedCount = invalidQuestions.count
+            validationErrors = invalidQuestions.prefix(10).map {
+                "第\($0.index + 1)题: \($0.errors.joined(separator: "; "))"
+            }
             showSuccess = true
         } catch {
             errorMessage = error.localizedDescription

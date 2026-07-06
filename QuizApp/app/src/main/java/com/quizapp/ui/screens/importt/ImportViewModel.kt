@@ -20,6 +20,7 @@ data class ImportUiState(
     val isComplete: Boolean = false,
     val successCount: Int = 0,
     val failCount: Int = 0,
+    val validationErrors: List<String> = emptyList(),
     val error: String? = null,
     val hasCustomExamConfig: Boolean = false,
     val singleWeight: String = "70",
@@ -73,11 +74,15 @@ class ImportViewModel @Inject constructor(
                 val result = importRepository.importFromUri(
                     state.bankName, uri, fileName, examConfig
                 )
+                val errorList = result.validationErrors.take(20).map { e ->
+                    "第${e.index + 1}题: ${e.errors.joinToString("; ")}"
+                }
                 _uiState.value = _uiState.value.copy(
                     isImporting = false,
                     isComplete = true,
                     successCount = result.successCount,
-                    failCount = result.failCount
+                    failCount = result.failCount,
+                    validationErrors = errorList
                 )
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(

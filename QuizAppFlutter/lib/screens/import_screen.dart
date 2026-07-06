@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import '../db/database.dart';
 import '../models/models.dart';
-import '../parsers/txt_parser.dart';
+import '../parsers/import_service.dart';
 
 class ImportScreen extends StatefulWidget {
   const ImportScreen({super.key});
@@ -16,6 +16,12 @@ class _ImportScreenState extends State<ImportScreen> {
   final _nameController = TextEditingController();
   bool _importing = false;
   String? _error;
+
+  // Import results
+  int _successCount = 0;
+  int _failCount = 0;
+  List<InvalidQuestion> _invalidQuestions = [];
+  bool _isComplete = false;
 
   @override
   void dispose() {
@@ -39,6 +45,7 @@ class _ImportScreenState extends State<ImportScreen> {
     setState(() {
       _importing = true;
       _error = null;
+      _isComplete = false;
     });
 
     try {
@@ -48,27 +55,28 @@ class _ImportScreenState extends State<ImportScreen> {
 
       final bytes = result.files.single.bytes!;
       final fileName = result.files.single.name;
-      List<Question> questions;
 
-      if (fileName.endsWith('.txt') || fileName.endsWith('.md')) {
-        final content = String.fromCharCodes(bytes);
-        questions = TxtParser().parse(content, bankId);
-      } else {
-        final content = String.fromCharCodes(bytes);
-        questions = TxtParser().parse(content, bankId);
-      }
+      List<Question> questions;
+      List<InvalidQuestion> invalidQuestions;
+
+      final importResult = await ImportService.parseFromBytes(fileName, bytes, bankId);
+      questions = importResult.questions;
+      invalidQuestions = importResult.invalidQuestions;
 
       await db.insertQuestions(questions);
 
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('成功导入 ${questions.length} 道题！')),
-      );
-      Navigator.pop(context, true);
+      setState(() {
+        _successCount = questions.length;
+        _failCount = invalidQuestions.length;
+        _invalidQuestions = invalidQuestions;
+        _isComplete = true;
+        _importing = false;
+      });
     } catch (e) {
-      setState(() => _error = '导入失败: $e');
-    } finally {
-      setState(() => _importing = false);
+      setState(() {
+        _error = '导入失败: $e';
+        _importing = false;
+      });
     }
   }
 
@@ -103,6 +111,52 @@ class _ImportScreenState extends State<ImportScreen> {
                   SizedBox(height: 16),
                   Text('正在解析题库...'),
                 ],
+              )
+            else if (_isComplete)
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    children: [
+                      const Icon(Icons.check_circle, color: Colors.green, size: 48),
+                      const SizedBox(height: 12),
+                      const Text('导入成功！',
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green)),
+                      const SizedBox(height: 8),
+                      Text('成功导入 $_successCount 道题',
+                          style: const TextStyle(fontSize: 16)),
+                      if (_failCount > 0) ...[
+                        const SizedBox(height: 4),
+                        Text('$_failCount 道题校验未通过，已跳过',
+                            style: const TextStyle(color: Colors.red, fontSize: 13)),
+                      ],
+                      if (_invalidQuestions.isNotEmpty) ...[
+                        const SizedBox(height: 12),
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.red.shade50,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('校验详情（前${_invalidQuestions.take(10).length}条）：',
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                              ..._invalidQuestions.take(10).map((iq) => Padding(
+                                padding: const EdgeInsets.only(top: 4),
+                                child: Text(
+                                  '第${iq.index + 1}题: ${iq.errors.join("; ")}',
+                                  style: const TextStyle(fontSize: 12, color: Colors.black87),
+                                ),
+                              )),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
               )
             else
               SizedBox(

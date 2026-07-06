@@ -104,7 +104,14 @@ struct ImportView: View {
             .alert("导入成功", isPresented: $viewModel.showSuccess) {
                 Button("确定") { dismiss() }
             } message: {
-                Text("成功导入 \(viewModel.importedCount) 道题目！")
+                var msg = "成功导入 \(viewModel.importedCount) 道题目！"
+                if viewModel.skippedCount > 0 {
+                    msg += "\n\(viewModel.skippedCount) 道题校验未通过，已跳过。"
+                }
+                if !viewModel.validationErrors.isEmpty {
+                    msg += "\n\n" + viewModel.validationErrors.prefix(5).joined(separator: "\n")
+                }
+                return Text(msg)
             }
         }
     }

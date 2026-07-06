@@ -32,18 +32,29 @@ struct BuiltInBankImporter {
             let questions = (try? parser.parse(content: content, bankId: 0)) ?? []
             guard !questions.isEmpty else { continue }
 
+            // ── 规范化 + 校验 ──
+            let normalized = questions.map { QuestionNormalizer.normalize($0) }
+            let result = QuestionValidator.validateAll(normalized)
+            let validQuestions = result.valid
+
+            guard !validQuestions.isEmpty else { continue }
+
             do {
                 var bank = QuestionBank(name: name, description: "内置题库")
                 try bankDAO.insert(&bank)
                 guard let bankId = bank.id else { continue }
 
-                let qs = questions.map { q in
+                let qs = validQuestions.map { q in
                     Question(bankId: bankId, questionType: q.questionType,
                              content: q.content, options: q.options,
                              answer: q.answer, analysis: q.analysis)
                 }
                 try questionDAO.insertBatch(qs)
                 try bankDAO.updateQuestionCount(bankId: bankId)
+
+                if !result.invalid.isEmpty {
+                    print("Built-in bank \(name): \(result.valid.count) imported, \(result.invalid.count) skipped")
+                }
             } catch {
                 print("Failed to import built-in bank \(name): \(error)")
             }

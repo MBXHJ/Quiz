@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import 'db/database.dart';
 import 'models/models.dart';
 import 'parsers/txt_parser.dart';
+import 'parsers/question_normalizer.dart';
+import 'parsers/question_validator.dart';
 import 'providers/app_provider.dart';
 import 'screens/home_screen.dart';
 
@@ -51,6 +53,12 @@ class _InitScreenState extends State<_InitScreen> {
     if (await db.isDatabaseEmpty()) {
       // Import built-in question banks
       // In Flutter, these would be loaded from assets
+      // Example for future use:
+      // final content = await rootBundle.loadString('assets/shiti_1432.txt');
+      // final parsed = TxtParser().parse(content, 0);
+      // final normalized = parsed.map((q) => QuestionNormalizer.normalize(q)).toList();
+      // final result = QuestionValidator.validateAll(normalized);
+      // await db.insertQuestions(result.valid);
     }
     if (mounted) {
       context.read<AppProvider>().loadBanks();

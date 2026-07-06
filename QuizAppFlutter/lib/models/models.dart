@@ -30,7 +30,7 @@ class QuestionBank {
   );
 }
 
-enum QuestionType { single, multi, judge }
+enum QuestionType { single, multi, judge, fill }
 
 class Question {
   final int? id;
@@ -79,6 +79,7 @@ class Question {
       case QuestionType.single: return '单选题';
       case QuestionType.multi: return '多选题';
       case QuestionType.judge: return '判断题';
+      case QuestionType.fill: return '填空题';
     }
   }
 }

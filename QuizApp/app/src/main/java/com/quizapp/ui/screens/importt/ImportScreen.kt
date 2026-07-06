@@ -133,7 +133,19 @@ fun ImportScreen(
                         Surface(shape = RoundedCornerShape(10.dp), color = CorrectGreenBg) {
                             Text("成功导入 ${s.successCount} 道题", Modifier.padding(horizontal = 14.dp, vertical = 8.dp), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
                         }
-                        if (s.failCount > 0) { Spacer(Modifier.height(6.dp)); Text("${s.failCount} 道题解析失败", style = MaterialTheme.typography.bodySmall, color = WrongRed) }
+                        if (s.failCount > 0) { Spacer(Modifier.height(6.dp)); Text("${s.failCount} 道题校验未通过，已跳过", style = MaterialTheme.typography.bodySmall, color = WrongRed) }
+                        if (s.validationErrors.isNotEmpty()) {
+                            Spacer(Modifier.height(12.dp))
+                            Surface(shape = RoundedCornerShape(10.dp), color = WrongRedBg) {
+                                Column(Modifier.padding(12.dp).fillMaxWidth(), horizontalAlignment = Alignment.Start) {
+                                    Text("校验详情（前${s.validationErrors.size}条）：", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = WrongRed)
+                                    s.validationErrors.take(10).forEach { err ->
+                                        Spacer(Modifier.height(4.dp))
+                                        Text(err, style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
                 else -> Button(

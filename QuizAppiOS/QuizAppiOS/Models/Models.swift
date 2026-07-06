@@ -23,12 +23,14 @@ enum QuestionType: String, Codable, CaseIterable {
     case single
     case multi
     case judge
+    case fill
 
     var label: String {
         switch self {
         case .single: return "单选题"
         case .multi: return "多选题"
         case .judge: return "判断题"
+        case .fill: return "填空题"
         }
     }
 }
