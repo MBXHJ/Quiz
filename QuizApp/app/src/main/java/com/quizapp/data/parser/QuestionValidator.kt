@@ -101,7 +101,7 @@ object QuestionValidator {
         for (c in question.answer) {
             val idx = c - 'A'
             if (idx >= question.options.size) {
-                errors.add("答案$c超出选项范围(共${question.options.size}个选项)")
+                errors.add("答案${c}超出选项范围(共${question.options.size}个选项)")
             }
         }
     }
